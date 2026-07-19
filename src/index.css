@@ -5,13 +5,6 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Bungee&family=Bebas+Neue&display=swap');
-@import "tailwindcss";
-
-@theme inline {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-}
 
 /* Base resets & scrollbar visual pairings */
 html {
@@ -152,21 +145,6 @@ body {
     0 0 0 rgba(255, 107, 0, 0);
 
   transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.hero-btn-explore::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(255, 138, 0, 0.9), rgba(255, 107, 0, 0), rgba(255, 255, 255, 0.4));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  z-index: -1;
 }
 
 .hero-btn-explore::after {
@@ -475,14 +453,6 @@ body {
 }
 
 /* The glassmorphism "CE" outline letters */
-.sbce-letter-glass {
-  position: relative;
-  display: inline-block;
-  color: transparent;
-  -webkit-text-stroke: 2.5px rgba(255, 255, 255, 0.75);
-  text-stroke: 2.5px rgba(255, 255, 255, 0.75);
-}
-
 .sbce-letter-glass::before {
   content: attr(data-letter);
   position: absolute;
@@ -575,7 +545,6 @@ width:100%;
   border-radius: inherit;
   padding: 1px;
   background: linear-gradient(135deg, rgba(255, 138, 0, 0.9), rgba(255, 107, 0, 0), rgba(255, 255, 255, 0.4));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   opacity: 0;
