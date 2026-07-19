@@ -149,7 +149,7 @@ export default function AdminView({
     else if (path === '/admin/settings') setActiveTab('settings');
     else if (path === '/admin/backup') setActiveTab('backup');
     else if (path === '/admin/admins') setActiveTab('admins');
-    else if (path === '/admin/access-requests') setActiveTab('requests');
+    else if (path === '/admin/requests') setActiveTab('requests');
     else if (path === '/admin/activity') setActiveTab('activity');
     else setActiveTab('overview');
   }, [path]);
