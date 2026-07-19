@@ -1,8 +1,4 @@
 {
-  "admin": {
-    "email": "admin@sbce.ac.in",
-    "password": "admin"
-  },
   "members": [
     {
       "id": "m1",

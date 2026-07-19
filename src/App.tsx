@@ -8,116 +8,180 @@ import ContactView from './components/ContactView';
 import AdminView from './components/AdminView';
 import { Event, Member, GalleryItem, Settings } from './types';
 import { Terminal } from 'lucide-react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { collection, onSnapshot, doc } from 'firebase/firestore';
+import { db } from './services/firebase';
 
-export default function App() {
-  const [currentTab, setTab] = useState<string>('home');
+function MainApp() {
+  const { user, isAuthorizedAdmin, accessRequest, loading: authLoading, logout, loginWithGoogle } = useAuth();
+  
+  // Custom SPA Router Path State
+  const [path, setPath] = useState<string>(window.location.pathname);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Core synchronized database states
+  // Core database states populated in real-time from Firestore
   const [events, setEvents] = useState<Event[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
 
-  // Authentication states
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('sbce_admin_token'));
-
   // Shared UX states
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
-  // Fetch all core datasets from Express server
-  const fetchAllData = async () => {
-    try {
-      const [eventsRes, membersRes, galleryRes, settingsRes] = await Promise.all([
-        fetch('/api/events'),
-        fetch('/api/members'),
-        fetch('/api/gallery'),
-        fetch('/api/settings')
-      ]);
-
-      const eventsData = await eventsRes.json();
-      const membersData = await membersRes.json();
-      const galleryData = await galleryRes.json();
-      const settingsData = await settingsRes.json();
-
-      setEvents(eventsData);
-      setMembers(membersData);
-      setGallery(galleryData);
-      setSettings(settingsData);
-    } catch (err) {
-      console.error('Failure retrieving state databases:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Check auth session validity on launch
-  const checkAuth = async (currentToken: string) => {
-    try {
-      const res = await fetch('/api/auth/check', {
-        headers: { 'Authorization': `Bearer ${currentToken}` }
-      });
-      const data = await res.json();
-      if (data.authenticated) {
-        setIsAuthenticated(true);
-      } else {
-        localStorage.removeItem('sbce_admin_token');
-        setToken(null);
-        setIsAuthenticated(false);
-      }
-    } catch (err) {
-      console.error('Session validation query failed:', err);
-    }
-  };
-
+  // Sync window.location.pathname with state
   useEffect(() => {
-    fetchAllData();
-    if (token) {
-      checkAuth(token);
-    }
-  }, [token]);
+    const handleLocationChange = () => {
+      setPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
 
-  // Handle Login proxy trigger
-  const handleLogin = async (emailInput: string, passwordInput: string): Promise<boolean> => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailInput, password: passwordInput })
-      });
-      const result = await response.json();
-      if (result.success && result.token) {
-        localStorage.setItem('sbce_admin_token', result.token);
-        setToken(result.token);
-        setIsAuthenticated(true);
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.error('Login connection error:', err);
-      return false;
-    }
-  };
-
-  // Handle Logout trigger
-  const handleLogout = () => {
-    localStorage.removeItem('sbce_admin_token');
-    setToken(null);
-    setIsAuthenticated(false);
-    setTab('home');
-  };
-
-  // Unified routing navigation with focus trigger
-  const handleSelectEventFromHome = (evt: Event) => {
-    setSelectedEvent(evt);
-    setTab('events');
-    // Scroll window smoothly to the event detail modal height
+  const navigate = (newPath: string) => {
+    window.history.pushState({}, '', newPath);
+    setPath(newPath);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Render Skeleton Loading Layout
-  if (isLoading || !settings) {
+  // Real-time Firestore Listeners
+  useEffect(() => {
+    // 1. Settings Listener
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'site'), (docSnap) => {
+      if (docSnap.exists()) {
+        setSettings(docSnap.data() as Settings);
+      } else {
+        // Fallback default settings for empty database
+        setSettings({
+          heroText: "CSE SBCE Coding Club",
+          heroSubtext: "Sree Buddha College of Engineering, Pattoor",
+          heroTagline: "Empowering the next generation of developers and software architects through collaborative hacking, hands-on bootcamps, and engineering excellence.",
+          aboutHistory: "Established in 2021 by the Department of Computer Science & Engineering, the SBCE Coding Club has grown into the campus hub for technological leadership.",
+          aboutMission: "To nurture a robust and inclusive developer ecosystem on campus where students learn modern engineering practices by doing.",
+          aboutVision: "To produce top-tier technical talent capable of engineering solutions for national and global challenges, setting a benchmark for student-run technical communities in Kerala.",
+          aboutObjectives: [
+            "Conduct weekly code-along labs and specialized bootcamps on industry-relevant frameworks."
+          ],
+          aboutCoordinators: [
+            { name: "Dr. Saji V.R.", title: "HOD, CSE Dept" }
+          ],
+          statistics: {
+            members: 240,
+            events: 28,
+            hackathons: 5,
+            projects: 12,
+            yearsActive: 5
+          },
+          socialLinks: {
+            email: "codingclub@sbce.ac.in",
+            instagram: "https://instagram.com/sbce_codingclub",
+            linkedin: "https://linkedin.com/company/sbce-codingclub",
+            github: "https://github.com/sbce-codingclub",
+            location: "Sree Buddha College of Engineering, Pattoor, Nooranad, Alappuzha, Kerala - 690529",
+            mapEmbedUrl: ""
+          },
+          footerText: "© 2026 CSE SBCE Coding Club. Engineered for developers, by developers."
+        });
+      }
+      setIsLoading(false);
+    }, (err) => {
+      console.error('Error fetching settings from Firestore:', err);
+      setIsLoading(false);
+    });
+
+    // 2. Events Listener
+    const unsubEvents = onSnapshot(collection(db, 'events'), (snapshot) => {
+      const eventsList: Event[] = [];
+      snapshot.forEach((d) => {
+        eventsList.push({ id: d.id, ...d.data() } as Event);
+      });
+      setEvents(eventsList);
+    });
+
+    // 3. Execom Members Listener
+    const unsubMembers = onSnapshot(collection(db, 'execom'), (snapshot) => {
+      const membersList: Member[] = [];
+      snapshot.forEach((d) => {
+        membersList.push({ id: d.id, ...d.data() } as Member);
+      });
+      membersList.sort((a, b) => (a.display_order || 99) - (b.display_order || 99));
+      setMembers(membersList);
+    });
+
+    // 4. Gallery Listener
+    const unsubGallery = onSnapshot(collection(db, 'gallery'), (snapshot) => {
+      const galleryList: GalleryItem[] = [];
+      snapshot.forEach((d) => {
+        galleryList.push({ id: d.id, ...d.data() } as GalleryItem);
+      });
+      setGallery(galleryList);
+    });
+
+    return () => {
+      unsubSettings();
+      unsubEvents();
+      unsubMembers();
+      unsubGallery();
+    };
+  }, []);
+
+  // Map route path to App tabs
+  let currentTab = 'home';
+  if (path === '/events') {
+    currentTab = 'events';
+  } else if (path === '/about' || path === '/execom') {
+    currentTab = 'about';
+  } else if (path === '/gallery') {
+    currentTab = 'gallery';
+  } else if (path === '/contact') {
+    currentTab = 'contact';
+  } else if (path.startsWith('/admin')) {
+    currentTab = 'admin';
+  }
+
+  // Handle Tab transitions in Header via URLs
+  const handleSetTab = (tabId: string) => {
+    if (tabId === 'home') {
+      navigate('/');
+    } else if (tabId === 'about') {
+      navigate('/about');
+    } else {
+      navigate(`/${tabId}`);
+    }
+  };
+
+  const handleSelectEventFromHome = (evt: Event) => {
+    setSelectedEvent(evt);
+    navigate('/events');
+  };
+
+  // Auth Protection / Redirect Guard
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (path.startsWith('/admin')) {
+      if (!user) {
+        // Not logged in -> force login page
+        if (path !== '/admin/login') {
+          navigate('/admin/login');
+        }
+      } else {
+        if (!isAuthorizedAdmin) {
+          // Logged in but not approved -> force access-pending page
+          if (path !== '/admin/access-pending') {
+            navigate('/admin/access-pending');
+          }
+        } else {
+          // Logged in & approved -> prevent login/pending views, force dashboard
+          if (path === '/admin/login' || path === '/admin/access-pending' || path === '/admin') {
+            navigate('/admin/dashboard');
+          }
+        }
+      }
+    }
+  }, [user, isAuthorizedAdmin, path, authLoading]);
+
+  // Loading Skeletons Fallback
+  if (isLoading || authLoading || !settings) {
     return (
       <div className="min-h-screen bg-black text-neutral-500 flex flex-col items-center justify-center p-6 select-none font-mono text-sm" id="loading-fallback">
         <div className="space-y-4 max-w-sm w-full text-center">
@@ -127,36 +191,80 @@ export default function App() {
             <div className="w-full bg-neutral-900 h-1.5 rounded-full overflow-hidden relative">
               <div className="bg-orange-500 h-full rounded-full animate-[shimmer_2s_infinite]" style={{ width: '65%' }}></div>
             </div>
-            <p className="text-[10px] text-neutral-600">Syncing database structures & layouts...</p>
+            <p className="text-[10px] text-neutral-600">Connecting to Firebase Cloud Engine...</p>
           </div>
         </div>
       </div>
     );
   }
 
+  // Render Access Pending Page
+  const renderAccessPendingPage = () => {
+    const isRejected = accessRequest?.status === 'rejected';
+    
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center px-4 py-12" id="admin-pending-container">
+        <div className="w-full max-w-md bg-black/60 backdrop-blur-md border border-neutral-800 rounded-3xl p-8 shadow-[0_0_50px_rgba(255,107,0,0.05)] text-center space-y-6 relative overflow-hidden" id="pending-card">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+          <div className="w-14 h-14 bg-neutral-900 border border-neutral-850 rounded-full flex items-center justify-center text-orange-500 mx-auto shadow-lg">
+            <Terminal className="w-6 h-6 animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-xl font-bold font-mono text-white">Access Verification</h1>
+            <p className="text-neutral-500 text-xs">Signed-in as: <span className="text-neutral-300 font-mono">{user?.email}</span></p>
+          </div>
+
+          <div className="p-5 bg-neutral-950/80 border border-neutral-900 rounded-xl space-y-2 text-xs">
+            <span className="text-[10px] font-mono text-neutral-500 uppercase block tracking-wider">Request Status</span>
+            
+            {isRejected ? (
+              <p className="text-red-500 font-bold font-mono">REJECTED</p>
+            ) : (
+              <p className="text-orange-500 font-bold font-mono animate-pulse">PENDING REVIEW</p>
+            )}
+
+            <p className="text-neutral-400 mt-2 leading-relaxed text-left">
+              {isRejected
+                ? `Your administrator access request was not approved. ${accessRequest?.rejectionReason ? `Reason: ${accessRequest.rejectionReason}` : 'Please contact the super administrator to reconsider your request.'}`
+                : "Your account does not currently have administrator access. Your access request has been recorded and can be reviewed by an existing administrator."
+              }
+            </p>
+          </div>
+
+          <button
+            id="pending-logout-btn"
+            onClick={logout}
+            className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 text-white font-semibold text-xs font-mono rounded-xl transition-all cursor-pointer"
+          >
+            Sign Out & Logout
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-black text-white antialiased selection:bg-orange-500 selection:text-black font-sans" id="app-root">
 
-      {/* Fixed transparent nav – rendered outside any constraint */}
+      {/* Navigation Header */}
       <Header 
         currentTab={currentTab} 
-        setTab={setTab} 
-        isAuthenticated={isAuthenticated} 
-        onLogout={handleLogout} 
+        setTab={handleSetTab} 
+        isAuthenticated={isAuthorizedAdmin} 
+        onLogout={logout} 
       />
 
-      {/* Home tab: full-viewport hero + constrained sections below */}
+      {/* Main View rendering based on current tab */}
       {currentTab === 'home' && (
         <HomeView 
           settings={settings} 
           events={events} 
           members={members} 
-          setTab={setTab} 
+          setTab={handleSetTab} 
           onSelectEvent={handleSelectEventFromHome} 
         />
       )}
 
-      {/* All other tabs: standard constrained layout */}
       {currentTab !== 'home' && (
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24" id="constrained-layout">
           <main id="main-content-area">
@@ -190,23 +298,37 @@ export default function App() {
             )}
 
             {currentTab === 'admin' && (
-              <AdminView 
-                isAuthenticated={isAuthenticated} 
-                onLogin={handleLogin} 
-                events={events} 
-                members={members} 
-                gallery={gallery} 
-                settings={settings} 
-                onUpdateEvents={setEvents} 
-                onUpdateMembers={setMembers} 
-                onUpdateGallery={setGallery} 
-                onUpdateSettings={setSettings} 
-                token={token} 
-              />
+              path === '/admin/access-pending' ? (
+                renderAccessPendingPage()
+              ) : (
+                <AdminView 
+                  isAuthenticated={isAuthorizedAdmin} 
+                  onLogin={loginWithGoogle} 
+                  events={events} 
+                  members={members} 
+                  gallery={gallery} 
+                  settings={settings} 
+                  onUpdateEvents={setEvents} 
+                  onUpdateMembers={setMembers} 
+                  onUpdateGallery={setGallery} 
+                  onUpdateSettings={setSettings} 
+                  token="" 
+                  path={path}
+                  navigate={navigate}
+                />
+              )
             )}
           </main>
         </div>
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <MainApp />
+    </AuthProvider>
   );
 }
