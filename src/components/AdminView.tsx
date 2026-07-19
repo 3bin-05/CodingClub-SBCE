@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Lock, Mail, Key, LayoutDashboard, Calendar, Users, Image as ImageIcon, Settings as SettingsIcon, 
   Plus, Edit2, Trash2, Save, Download, Upload, CheckCircle2, AlertCircle, Eye, EyeOff, FolderOpen,
-  UserCheck, ShieldAlert, History, UserX, AlertOctagon, UserPlus, Clock
+  UserCheck, ShieldAlert, History, UserX, AlertOctagon, UserPlus, Clock, Menu, X, LogOut
 } from 'lucide-react';
 import { Event, Member, GalleryItem, Settings } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -131,6 +131,10 @@ export default function AdminView({
 
   // Filtering for Admin requests tab
   const [requestFilter, setRequestFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+
+  // Mobile nav drawer state
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const closeMobileNav = () => setMobileNavOpen(false);
 
   // CRUD Editing States
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -782,6 +786,12 @@ export default function AdminView({
     else navigate(`/admin/${tab}`);
   };
 
+  // Navigate and close mobile nav simultaneously
+  const navigateToTabMobile = (tab: AdminTab) => {
+    navigateToTab(tab);
+    closeMobileNav();
+  };
+
   return (
     <div className="space-y-8 pb-20" id="admin-dashboard-root">
       {/* Status Alert Popup */}
@@ -799,33 +809,136 @@ export default function AdminView({
         </div>
       )}
 
-      {/* Header */}
-      <div className="border-b border-neutral-900 pb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" id="dashboard-header">
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-black text-white font-mono tracking-tight flex items-center gap-2">
-            <LayoutDashboard className="w-6 h-6 text-orange-500" />
-            Control Hub
-          </h1>
-          <p className="text-neutral-500 text-xs">
-            Logged in as: <span className="text-neutral-300 font-mono">{user?.email}</span> ({adminRecord?.role})
-          </p>
+      {/* ─── Mobile Sidebar Drawer ─── */}
+      {/* Backdrop */}
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden"
+          onClick={closeMobileNav}
+          id="mobile-nav-backdrop"
+        />
+      )}
+
+      {/* Drawer Panel */}
+      <div
+        id="mobile-nav-drawer"
+        className={`fixed top-0 left-0 h-full w-72 z-50 lg:hidden flex flex-col
+          bg-[#0a0a0a] border-r border-neutral-800
+          shadow-[4px_0_40px_rgba(0,0,0,0.8)]
+          transition-transform duration-300 ease-in-out
+          ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
+      >
+        {/* Drawer Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(255,107,0,0.6)]"></span>
+            <span className="text-sm font-black font-mono text-white tracking-tight">Control Hub</span>
+          </div>
+          <button
+            onClick={closeMobileNav}
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+            id="close-mobile-nav-btn"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* User Info */}
+        <div className="px-5 py-3 border-b border-neutral-800/60 shrink-0">
+          <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">Logged in as</p>
+          <p className="text-xs font-mono text-neutral-200 truncate mt-0.5">{user?.email}</p>
+          <span className="inline-block mt-1 px-2 py-0.5 bg-orange-600/15 border border-orange-500/25 text-orange-400 text-[9px] font-mono rounded-full">
+            {adminRecord?.role === 'super_admin' ? 'SUPER ADMIN' : 'ADMIN'}
+          </span>
+        </div>
+
+        {/* Nav Items */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-none">
+          {[
+            { tab: 'overview'   as AdminTab, label: 'Overview',         icon: LayoutDashboard, badge: null },
+            { tab: 'events'     as AdminTab, label: 'Events CRUD',       icon: Calendar,        badge: null },
+            { tab: 'committee'  as AdminTab, label: 'Committee CRUD',    icon: Users,           badge: null },
+            { tab: 'gallery'    as AdminTab, label: 'Gallery CRUD',      icon: ImageIcon,       badge: null },
+            { tab: 'settings'   as AdminTab, label: 'Web Settings',      icon: SettingsIcon,    badge: null },
+            { tab: 'requests'   as AdminTab, label: 'Access Requests',   icon: UserPlus,        badge: pendingRequestsCount > 0 ? pendingRequestsCount : null },
+            { tab: 'admins'     as AdminTab, label: 'Administrators',    icon: UserCheck,       badge: null },
+            { tab: 'activity'   as AdminTab, label: 'Audit History',     icon: History,         badge: null },
+            { tab: 'backup'     as AdminTab, label: 'DB Backup',         icon: Download,        badge: null },
+          ].map(({ tab, label, icon: Icon, badge }) => (
+            <button
+              key={tab}
+              id={`mobile-tab-${tab}`}
+              onClick={() => navigateToTabMobile(tab)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-mono transition-all cursor-pointer text-left
+                ${ activeTab === tab
+                  ? 'bg-orange-600 text-black font-bold shadow-md shadow-orange-600/20'
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+                }`}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              <span className="flex-1">{label}</span>
+              {badge !== null && (
+                <span className="bg-black/30 text-current font-extrabold text-[9px] px-1.5 py-0.5 rounded-full shrink-0">
+                  {badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+
+        {/* Sign Out */}
+        <div className="px-3 py-4 border-t border-neutral-800 shrink-0">
+          <button
+            onClick={() => { closeMobileNav(); logout(); }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-mono text-neutral-400 hover:text-red-400 hover:bg-red-950/20 transition-all cursor-pointer"
+            id="mobile-nav-logout-btn"
+          >
+            <LogOut className="w-4 h-4 shrink-0" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ─── Dashboard Header ─── */}
+      <div className="border-b border-neutral-900 pb-6 flex items-center justify-between gap-4" id="dashboard-header">
+        <div className="flex items-center gap-3">
+          {/* Hamburger — mobile only */}
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            className="lg:hidden p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 border border-neutral-800 transition-colors cursor-pointer"
+            id="open-mobile-nav-btn"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="space-y-0.5">
+            <h1 className="text-xl md:text-3xl font-black text-white font-mono tracking-tight flex items-center gap-2">
+              <LayoutDashboard className="w-5 h-5 md:w-6 md:h-6 text-orange-500" />
+              Control Hub
+            </h1>
+            <p className="text-neutral-500 text-[10px] hidden sm:block">
+              Logged in as: <span className="text-neutral-300 font-mono">{user?.email}</span> ({adminRecord?.role})
+            </p>
+          </div>
         </div>
         
-        {/* Quick notification alert */}
+        {/* Pending requests badge */}
         {pendingRequestsCount > 0 && (
           <button
             onClick={() => navigateToTab('requests')}
-            className="flex items-center gap-2 px-3 py-1.5 bg-orange-600/10 border border-orange-500/20 text-orange-400 text-xs font-mono rounded-lg hover:bg-orange-600 hover:text-black transition-all cursor-pointer"
+            className="flex items-center gap-2 px-3 py-1.5 bg-orange-600/10 border border-orange-500/20 text-orange-400 text-xs font-mono rounded-lg hover:bg-orange-600 hover:text-black transition-all cursor-pointer shrink-0"
           >
             <AlertOctagon className="w-3.5 h-3.5 animate-pulse" />
-            <span>{pendingRequestsCount} Pending Access Requests</span>
+            <span className="hidden sm:inline">{pendingRequestsCount} Pending</span>
+            <span className="sm:hidden">{pendingRequestsCount}</span>
           </button>
         )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start" id="dashboard-grid">
-        {/* Left Sidebar Menu */}
-        <div className="lg:col-span-3 flex flex-row lg:flex-col gap-1 overflow-x-auto pb-2 lg:pb-0 scrollbar-none" id="dashboard-sidebar">
+        {/* ─── Desktop Sidebar (lg+) ─── */}
+        <div className="hidden lg:flex lg:col-span-3 flex-col gap-1" id="dashboard-sidebar">
           <button id="tab-overview" onClick={() => navigateToTab('overview')} className={tabClasses('overview')}>
             <LayoutDashboard className="w-4 h-4 shrink-0" />
             <span>Overview</span>
@@ -851,7 +964,6 @@ export default function AdminView({
             <span>Web Settings</span>
           </button>
           
-          {/* Access Requests Sub-tab */}
           <button id="tab-requests" onClick={() => navigateToTab('requests')} className={tabClasses('requests')}>
             <UserPlus className="w-4 h-4 shrink-0" />
             <span>Access Requests</span>
@@ -862,13 +974,11 @@ export default function AdminView({
             )}
           </button>
           
-          {/* Admins list sub-tab */}
           <button id="tab-admins" onClick={() => navigateToTab('admins')} className={tabClasses('admins')}>
             <UserCheck className="w-4 h-4 shrink-0" />
             <span>Administrators</span>
           </button>
 
-          {/* Activity Logs sub-tab */}
           <button id="tab-activity" onClick={() => navigateToTab('activity')} className={tabClasses('activity')}>
             <History className="w-4 h-4 shrink-0" />
             <span>Audit History</span>
