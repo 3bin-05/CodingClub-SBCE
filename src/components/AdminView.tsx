@@ -158,27 +158,39 @@ export default function AdminView({
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    // Listen to Admins
-    const unsubAdmins = onSnapshot(collection(db, 'admins'), (snapshot) => {
-      const list: any[] = [];
-      snapshot.forEach((d) => list.push(d.data()));
-      setAdminsList(list);
-    });
+    // Listen to Admins list
+    const unsubAdmins = onSnapshot(
+      collection(db, 'admins'),
+      (snapshot) => {
+        const list: any[] = [];
+        snapshot.forEach((d) => list.push(d.data()));
+        setAdminsList(list);
+      },
+      (err) => console.error('[AdminView] admins listener error:', err)
+    );
 
-    // Listen to Access Requests
-    const unsubRequests = onSnapshot(collection(db, 'adminAccessRequests'), (snapshot) => {
-      const list: any[] = [];
-      snapshot.forEach((d) => list.push(d.data()));
-      setRequestsList(list);
-    });
+    // Listen to all Access Requests
+    const unsubRequests = onSnapshot(
+      collection(db, 'adminAccessRequests'),
+      (snapshot) => {
+        const list: any[] = [];
+        snapshot.forEach((d) => list.push({ ...d.data(), _id: d.id }));
+        setRequestsList(list);
+      },
+      (err) => console.error('[AdminView] accessRequests listener error:', err)
+    );
 
     // Listen to Audit Logs
     const qLogs = query(collection(db, 'adminAuditLogs'), orderBy('timestamp', 'desc'), limit(100));
-    const unsubLogs = onSnapshot(qLogs, (snapshot) => {
-      const list: any[] = [];
-      snapshot.forEach((d) => list.push({ id: d.id, ...d.data() }));
-      setAuditLogs(list);
-    });
+    const unsubLogs = onSnapshot(
+      qLogs,
+      (snapshot) => {
+        const list: any[] = [];
+        snapshot.forEach((d) => list.push({ id: d.id, ...d.data() }));
+        setAuditLogs(list);
+      },
+      (err) => console.error('[AdminView] auditLogs listener error:', err)
+    );
 
     return () => {
       unsubAdmins();
@@ -449,38 +461,39 @@ export default function AdminView({
       showStatus('Only Super Administrators are authorized to approve access requests.', 'error');
       return;
     }
-    if (request.uid === user?.uid) {
+    if (request.uid === user.uid) {
       showStatus('Operation Blocked: You cannot approve your own access request.', 'error');
       return;
     }
-    if (!confirm(`Are you sure you want to approve administrator access for ${request.displayName} (${request.email})?`)) return;
+    if (!confirm(`Approve administrator access for ${request.displayName} (${request.email})?`)) return;
 
     try {
       const now = new Date().toISOString();
-      
-      // 1. Write the new admin to the admins collection
+
+      // 1. Create the admin record (super admin rule allows this)
       await setDoc(doc(db, 'admins', request.uid), {
-        uid: request.uid,
-        email: request.email,
+        uid:         request.uid,
+        email:       request.email,
         displayName: request.displayName,
-        role: 'admin', // approved as standard admin by default
-        status: 'active',
-        approvedBy: user.email,
-        approvedAt: now,
-        createdAt: now,
-        updatedAt: now
+        role:        'admin',
+        status:      'active',
+        approvedBy:  user.email,
+        approvedAt:  serverTimestamp(),
+        createdAt:   now,
+        updatedAt:   now,
       });
 
-      // 2. Update status of the access request to approved
+      // 2. Mark the access request as approved (super admin update rule)
       await updateDoc(doc(db, 'adminAccessRequests', request.uid), {
-        status: 'approved',
+        status:     'approved',
         reviewedBy: user.email,
-        reviewedAt: now
+        reviewedAt: serverTimestamp(),
       });
 
       await logAdminAction('Access Request Approved', 'admin', request.uid, request.email, { approvedBy: user.email });
-      showStatus(`Approved access for: ${request.displayName}`);
+      showStatus(`✓ Approved access for: ${request.displayName}`);
     } catch (err: any) {
+      console.error('[Approve]', err);
       showStatus('Failed to approve request: ' + err.message, 'error');
     }
   };
@@ -491,21 +504,22 @@ export default function AdminView({
       showStatus('Only Super Administrators are authorized to reject requests.', 'error');
       return;
     }
-    const reason = prompt('Please specify a rejection reason (optional):') || '';
+    const reason = prompt('Optional: enter a rejection reason:') ?? '';
     if (!confirm(`Reject administrator access for ${request.displayName} (${request.email})?`)) return;
 
     try {
-      const now = new Date().toISOString();
+      // Super admin update rule allows this
       await updateDoc(doc(db, 'adminAccessRequests', request.uid), {
-        status: 'rejected',
-        reviewedBy: user.email,
-        reviewedAt: now,
-        rejectionReason: reason || 'Not approved by super administrator.'
+        status:          'rejected',
+        reviewedBy:      user.email,
+        reviewedAt:      serverTimestamp(),
+        rejectionReason: reason || 'Not approved by the Super Administrator.',
       });
 
       await logAdminAction('Access Request Rejected', 'admin_request', request.uid, request.email, { reason });
       showStatus(`Rejected request for: ${request.displayName}`);
     } catch (err: any) {
+      console.error('[Reject]', err);
       showStatus('Failed to reject request: ' + err.message, 'error');
     }
   };

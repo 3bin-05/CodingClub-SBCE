@@ -1,24 +1,27 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  User, 
-  signInWithPopup, 
+import {
+  User,
+  signInWithPopup,
   GoogleAuthProvider,
-  signOut as firebaseSignOut, 
+  signOut as firebaseSignOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  onSnapshot, 
-  serverTimestamp, 
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  onSnapshot,
+  serverTimestamp,
   increment,
   collection,
-  addDoc 
+  addDoc
 } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
 interface AuthContextType {
   user: User | null;
   adminRecord: any | null;
@@ -27,157 +30,155 @@ interface AuthContextType {
   isAuthorizedAdmin: boolean;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-  recordAccessAttempt: (firebaseUser: User) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Provider
+// ─────────────────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser]               = useState<User | null>(null);
   const [adminRecord, setAdminRecord] = useState<any | null>(null);
   const [accessRequest, setAccessRequest] = useState<any | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading]         = useState<boolean>(true);
 
+  // Derived: is the logged-in user an active admin?
   const isAuthorizedAdmin = !!adminRecord && adminRecord.status === 'active';
 
-  // Function to record/update access attempt
-  const recordAccessAttempt = async (firebaseUser: User) => {
-    if (!firebaseUser) return;
-    const requestDocRef = doc(db, 'adminAccessRequests', firebaseUser.uid);
-    try {
-      const docSnap = await getDoc(requestDocRef);
-      if (!docSnap.exists()) {
-        await setDoc(requestDocRef, {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Unknown User',
-          status: 'pending',
-          firstRequestedAt: serverTimestamp(),
-          lastAttemptAt: serverTimestamp(),
-          attemptCount: 1
-        });
-      } else {
-        await updateDoc(requestDocRef, {
-          lastAttemptAt: serverTimestamp(),
-          attemptCount: increment(1)
-        });
-      }
-    } catch (err) {
-      console.error('Error recording access attempt:', err);
-    }
-  };
-
+  // ── Real-time auth + Firestore listeners ────────────────────────────────
   useEffect(() => {
-    let unsubAdmin: (() => void) | null = null;
+    let unsubAdmin:   (() => void) | null = null;
     let unsubRequest: (() => void) | null = null;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      // Tear down listeners from the previous session
+      if (unsubAdmin)   { unsubAdmin();   unsubAdmin   = null; }
+      if (unsubRequest) { unsubRequest(); unsubRequest = null; }
+
       setUser(firebaseUser);
 
-      // Clean up previous snapshots
-      if (unsubAdmin) unsubAdmin();
-      if (unsubRequest) unsubRequest();
-
-      if (firebaseUser) {
-        // Set up real-time listener for the user's admin document
-        unsubAdmin = onSnapshot(doc(db, 'admins', firebaseUser.uid), (docSnap) => {
-          if (docSnap.exists()) {
-            setAdminRecord(docSnap.data());
-          } else {
-            setAdminRecord(null);
-          }
-        }, (err) => {
-          console.error('Error listening to admin record:', err);
-        });
-
-        // Set up real-time listener for the user's access request document
-        unsubRequest = onSnapshot(doc(db, 'adminAccessRequests', firebaseUser.uid), (docSnap) => {
-          if (docSnap.exists()) {
-            setAccessRequest(docSnap.data());
-          } else {
-            setAccessRequest(null);
-          }
-          setLoading(false);
-        }, (err) => {
-          console.error('Error listening to access request:', err);
-          setLoading(false);
-        });
-
-      } else {
+      if (!firebaseUser) {
         setAdminRecord(null);
         setAccessRequest(null);
         setLoading(false);
+        return;
       }
+
+      // Listen to this user's admin document
+      unsubAdmin = onSnapshot(
+        doc(db, 'admins', firebaseUser.uid),
+        (snap) => setAdminRecord(snap.exists() ? snap.data() : null),
+        (err)  => console.error('[Auth] admins listener error:', err)
+      );
+
+      // Listen to this user's access request document
+      unsubRequest = onSnapshot(
+        doc(db, 'adminAccessRequests', firebaseUser.uid),
+        (snap) => {
+          setAccessRequest(snap.exists() ? snap.data() : null);
+          setLoading(false);
+        },
+        (err) => {
+          console.error('[Auth] accessRequest listener error:', err);
+          setLoading(false);
+        }
+      );
     });
 
     return () => {
-      unsubscribeAuth();
-      if (unsubAdmin) unsubAdmin();
+      unsubAuth();
+      if (unsubAdmin)   unsubAdmin();
       if (unsubRequest) unsubRequest();
     };
   }, []);
 
+  // ── Google Sign-In + Access Request Logic ───────────────────────────────
   const loginWithGoogle = async () => {
-    setLoading(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      const userCredential = await signInWithPopup(auth, provider);
-      const firebaseUser = userCredential.user;
-      const uid = firebaseUser.uid;
-      const email = firebaseUser.email || '';
-      const name = firebaseUser.displayName || email.split('@')[0] || 'Admin';
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
 
-      // 1. Fetch metadata config to check if database is empty (bootstrap check)
-      const metaDocRef = doc(db, 'metadata', 'admin_config');
-      const metaSnap = await getDoc(metaDocRef);
-      const isDbEmpty = !metaSnap.exists() || !metaSnap.data()?.superAdmins || metaSnap.data()?.superAdmins.length === 0;
+    const credential  = await signInWithPopup(auth, provider);
+    const firebaseUser = credential.user;
+    const uid   = firebaseUser.uid;
+    const email = firebaseUser.email ?? '';
+    const name  = firebaseUser.displayName || email.split('@')[0] || 'User';
 
-      if (isDbEmpty) {
-        // Bootstrap: Set directly as active super_admin
-        await setDoc(doc(db, 'admins', uid), {
-          uid,
-          email,
-          displayName: name,
-          role: 'super_admin',
-          status: 'active',
-          approvedBy: 'System Bootstrap',
-          approvedAt: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
+    // ── Bootstrap check ─────────────────────────────────────────────────
+    const metaRef  = doc(db, 'metadata', 'admin_config');
+    const metaSnap = await getDoc(metaRef);
+    const isBootstrap =
+      !metaSnap.exists() ||
+      !metaSnap.data()?.superAdmins ||
+      (metaSnap.data()?.superAdmins as string[]).length === 0;
 
-        // Initialize admin_config metadata document
-        await setDoc(metaDocRef, {
-          superAdmins: [uid]
-        });
+    if (isBootstrap) {
+      // ── First user ever → make them Super Admin ─────────────────────
+      const now = new Date().toISOString();
+      await setDoc(doc(db, 'admins', uid), {
+        uid,
+        email,
+        displayName: name,
+        role:        'super_admin',
+        status:      'active',
+        approvedBy:  'System Bootstrap',
+        approvedAt:  now,
+        createdAt:   now,
+        updatedAt:   now,
+      });
 
-        // Write bootstrap audit log
-        await addDoc(collection(db, 'adminAuditLogs'), {
-          action: 'System Bootstrapped',
-          targetType: 'system',
-          targetId: 'bootstrap',
-          targetName: 'First Super Admin Created',
-          performedByUid: uid,
-          performedByEmail: email,
-          timestamp: serverTimestamp(),
-          metadata: { email }
-        });
-      } else {
-        // Standard user: Check if they are an active admin, otherwise record access attempt
-        const adminSnap = await getDoc(doc(db, 'admins', uid));
-        if (!adminSnap.exists() || adminSnap.data()?.status !== 'active') {
-          await recordAccessAttempt(firebaseUser);
-        }
-      }
-    } catch (err) {
-      setLoading(false);
-      throw err;
+      await setDoc(metaRef, { superAdmins: [uid] });
+
+      await addDoc(collection(db, 'adminAuditLogs'), {
+        action:           'System Bootstrapped',
+        targetType:       'system',
+        targetId:         'bootstrap',
+        targetName:       'First Super Admin Created',
+        performedByUid:   uid,
+        performedByEmail: email,
+        timestamp:        serverTimestamp(),
+        metadata:         { email },
+      });
+
+      return; // listeners will fire and set state automatically
     }
+
+    // ── Already bootstrapped: check if this user is an active admin ────
+    const adminSnap = await getDoc(doc(db, 'admins', uid));
+    if (adminSnap.exists() && adminSnap.data()?.status === 'active') {
+      return; // already approved — listeners will update state
+    }
+
+    // ── Not an admin → record / increment access request ───────────────
+    const requestRef  = doc(db, 'adminAccessRequests', uid);
+    const requestSnap = await getDoc(requestRef);
+
+    if (!requestSnap.exists()) {
+      // First-time request
+      await setDoc(requestRef, {
+        uid,
+        email,
+        displayName:      name,
+        status:           'pending',
+        firstRequestedAt: serverTimestamp(),
+        lastAttemptAt:    serverTimestamp(),
+        attemptCount:     1,
+      });
+    } else {
+      // Repeat attempt — only increment counter & timestamp
+      await updateDoc(requestRef, {
+        lastAttemptAt: serverTimestamp(),
+        attemptCount:  increment(1),
+        // keep displayName/email up to date in case they changed
+        displayName: name,
+        email,
+      });
+    }
+    // The onSnapshot listener will pick up the new document and update state
   };
 
+  // ── Logout ──────────────────────────────────────────────────────────────
   const logout = async () => {
-    setLoading(true);
     await firebaseSignOut(auth);
     setAdminRecord(null);
     setAccessRequest(null);
@@ -192,17 +193,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthorizedAdmin,
       loginWithGoogle,
       logout,
-      recordAccessAttempt
     }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Hook
+// ─────────────────────────────────────────────────────────────────────────────
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
+  return ctx;
 }

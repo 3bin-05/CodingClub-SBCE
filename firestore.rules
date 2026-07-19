@@ -1,29 +1,42 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check if the user is an active admin (any role)
+
+    // ──────────────────────────────────────────────────────────────
+    // HELPER FUNCTIONS
+    // ──────────────────────────────────────────────────────────────
+
+    // Checks if the requesting user is an active admin (any role)
     function isActiveAdmin() {
-      return request.auth != null && 
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.status == 'active';
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.status == 'active';
     }
 
-    // Helper function to check if the user is a super admin
+    // Checks if the requesting user is an active super_admin
     function isSuperAdmin() {
-      return request.auth != null && 
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.status == 'active' &&
-        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'super_admin';
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.status == 'active'
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'super_admin';
     }
 
-    // Helper function to check if the database is in a bootstrap state (no super_admins exist)
+    // Bootstrap state: no super_admins have been assigned yet
     function isBootstrapState() {
-      return !exists(/databases/$(database)/documents/metadata/admin_config) ||
-        get(/databases/$(database)/documents/metadata/admin_config).data.superAdmins.size() == 0;
+      return !exists(/databases/$(database)/documents/metadata/admin_config)
+        || !('superAdmins' in get(/databases/$(database)/documents/metadata/admin_config).data)
+        || get(/databases/$(database)/documents/metadata/admin_config).data.superAdmins.size() == 0;
     }
 
-    // Public website content collections
+    // Checks the requesting user owns this document
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // PUBLIC WEBSITE CONTENT (read by everyone, write by active admins)
+    // ──────────────────────────────────────────────────────────────
+
     match /events/{eventId} {
       allow read: if true;
       allow write: if isActiveAdmin();
@@ -44,52 +57,64 @@ service cloud.firestore {
       allow write: if isActiveAdmin();
     }
 
-    // Audit logs - read by any active admin, write by any active admin or during bootstrap
+    // ──────────────────────────────────────────────────────────────
+    // AUDIT LOGS
+    // ──────────────────────────────────────────────────────────────
+
     match /adminAuditLogs/{logId} {
-      allow read: if isActiveAdmin();
-      allow create: if isActiveAdmin() || isBootstrapState();
+      allow read:   if isActiveAdmin();
+      // Any authenticated user can write audit logs (needed for bootstrap and access requests)
+      allow create: if request.auth != null;
+      allow update, delete: if false;
     }
 
-    // Metadata / Config
+    // ──────────────────────────────────────────────────────────────
+    // METADATA / CONFIG
+    // ──────────────────────────────────────────────────────────────
+
     match /metadata/{docId} {
-      allow read: if request.auth != null;
-      // Allow writing if user is super admin or if the database is empty (bootstrap)
+      allow read:  if request.auth != null;
       allow write: if isSuperAdmin() || isBootstrapState();
     }
 
-    // Admins Collection
+    // ──────────────────────────────────────────────────────────────
+    // ADMINS COLLECTION
+    // ──────────────────────────────────────────────────────────────
+
     match /admins/{uid} {
-      allow read: if request.auth != null;
-      // Write is allowed by super_admin (excluding self-writes) or bootstrap state
-      allow write: if isBootstrapState() || (
-        isSuperAdmin() && request.auth.uid != uid
-      );
+      // Any authenticated user can read their own record;
+      // active admins can read all records (needed to load the admins list in the dashboard)
+      allow read: if isOwner(uid) || isActiveAdmin();
+
+      // Bootstrap: first sign-in creates the super admin record
+      // Super admin: can create/update/delete other admins (not themselves)
+      allow create: if isBootstrapState() || (isSuperAdmin() && !isOwner(uid));
+      allow update: if isBootstrapState() || (isSuperAdmin() && !isOwner(uid));
+      allow delete: if isSuperAdmin() && !isOwner(uid);
     }
 
-    // Access Requests Collection
+    // ──────────────────────────────────────────────────────────────
+    // ACCESS REQUESTS COLLECTION
+    // ──────────────────────────────────────────────────────────────
+
     match /adminAccessRequests/{uid} {
-      // Admins can read all requests. Owners can read their own request.
-      allow read: if isActiveAdmin() || (request.auth != null && request.auth.uid == uid);
-      
-      // Creating a request
-      allow create: if request.auth != null && request.auth.uid == uid 
-        && request.resource.data.status == 'pending'
-        && request.resource.data.attemptCount == 1;
+      // Active admins can read all requests; owners can read their own
+      allow read: if isActiveAdmin() || isOwner(uid);
 
-      // Updating a request
-      allow update: if 
-        // 1. Owners can only increment attempts and update lastAttemptAt, they cannot approve themselves
-        (request.auth != null && request.auth.uid == uid 
-          && request.resource.data.status == resource.data.status 
-          && request.resource.data.email == resource.data.email
-          && request.resource.data.displayName == resource.data.displayName
-          && request.resource.data.firstRequestedAt == resource.data.firstRequestedAt
-          && request.resource.data.attemptCount == resource.data.attemptCount + 1
-        ) ||
-        // 2. Super Admins can update status (approve/reject) and reviewedBy details
-        isSuperAdmin();
+      // Any signed-in user can create their OWN request document
+      // (the document ID must equal their UID)
+      allow create: if isOwner(uid) && request.resource.data.status == 'pending';
 
-      // Deleting requests is restricted to super admins
+      // Owners can update only attempt metadata (cannot self-approve)
+      // Super admins can update anything (approve / reject)
+      allow update: if
+        (isOwner(uid)
+          && request.resource.data.status == resource.data.status
+          && request.resource.data.uid    == resource.data.uid
+          && request.resource.data.email  == resource.data.email
+        ) || isSuperAdmin();
+
+      // Only super admins can delete requests
       allow delete: if isSuperAdmin();
     }
   }
