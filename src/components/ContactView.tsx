@@ -8,10 +8,9 @@ interface ContactViewProps {
 
 export default function ContactView({ settings }: ContactViewProps) {
   const socials = settings.socialLinks || {
-    email: "codingclub@sbce.ac.in",
+    email: "sbcecodingclub@gmail.com",
     instagram: "https://instagram.com/sbce_codingclub",
     linkedin: "https://linkedin.com/company/sbce-codingclub",
-    github: "https://github.com/sbce-codingclub",
     location: "Sree Buddha College of Engineering, Pattoor, Nooranad, Alappuzha, Kerala - 690529",
     mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3936.815309325603!2d76.6042171147889!3d9.171249993421379!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b06117f77777777%3A0x6b4f707cfbdfa9f7!2sSree%20Buddha%20College%20of%20Engineering%20%2C%20Pattoor!5e0!3m2!1sen!2sin!4v1626245999999!5m2!1sen!2sin"
   };
@@ -20,7 +19,6 @@ export default function ContactView({ settings }: ContactViewProps) {
     { label: 'Email Desk', value: socials.email, href: `mailto:${socials.email}`, icon: Mail },
     { label: 'Instagram', value: '@sbce_codingclub', href: socials.instagram, icon: Instagram },
     { label: 'LinkedIn', value: 'SBCE Coding Club', href: socials.linkedin, icon: Linkedin },
-    { label: 'GitHub Organization', value: 'sbce-codingclub', href: socials.github, icon: Github },
   ];
 
   return (

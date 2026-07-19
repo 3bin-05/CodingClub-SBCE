@@ -1,6 +1,7 @@
 import React from 'react';
 import { Users, Calendar, Trophy, FolderCode, ArrowUpRight, ArrowRight, Github, Linkedin, Instagram, Mail, MapPin, Zap, GitBranch } from 'lucide-react';
 import { Event, Member, Settings } from '../types';
+import heroImage from '../assets/images/HeroBG.png';
 
 interface HomeViewProps {
   settings: Settings;
@@ -26,6 +27,18 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
         id="hero-section"
         style={{ marginTop: '-1px' }}
       >
+        {/* Background image — sits behind every other hero layer */}
+        <div
+          className="absolute inset-0 bg-cover bg-center pointer-events-none"
+          style={{ backgroundImage: `url(${heroImage})` }}
+          id="hero-image-bg-container"
+        />
+
+        {/* Dark overlay — stronger on the left where the headline sits, so text stays legible */}
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-black/92 via-black/70 to-black/55 pointer-events-none"
+          aria-hidden="true"
+        />
         {/* Fine grain — keeps the black from feeling flat */}
         <div className="absolute inset-0 hero-grain pointer-events-none" aria-hidden="true" />
 
@@ -71,6 +84,7 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
                 style={{ animationDelay: '450ms' }}
                 id="hero-actions"
               >
+                {/* Primary CTA — solid glass, the main conversion path */}
                 <button
                   onClick={() => setTab('events')}
                   className="hero-btn-explore"
@@ -79,15 +93,17 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
                   <span>Explore Events</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
+
+                {/* Secondary CTA — quiet ghost button, distinct id and treatment
+                    so it doesn't compete visually with the primary action */}
                 <button
                   onClick={() => setTab('about')}
-                  className="hero-btn-explore"
-                  id="hero-explore-events-btn"
+                  className="hero-btn-ghost"
+                  id="hero-meet-execom-btn"
                 >
                   <span>Meet Our Execom</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
-
               </div>
             </div>
 

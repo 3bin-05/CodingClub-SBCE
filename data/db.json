@@ -91,6 +91,21 @@
       "certificate_link": "",
       "created_at": "2026-07-12T14:30:00.000Z",
       "updated_at": "2026-07-12T14:30:00.000Z"
+    },
+    {
+      "id": "e1784468517037",
+      "title": "hello world",
+      "description": "fsadfgasdfvasdd",
+      "banner": "https://images.unsplash.com/photo-1618401471353-b98aedd07871?w=800&auto=format&fit=crop&q=80",
+      "venue": "aWGGFDAUHSGF",
+      "date": "2026-07-01",
+      "time": "9:30PM",
+      "speaker": "",
+      "status": "Upcoming",
+      "registration_link": "",
+      "certificate_link": "",
+      "created_at": "2026-07-19T13:41:57.037Z",
+      "updated_at": "2026-07-19T13:41:57.037Z"
     }
   ],
   "gallery": [
