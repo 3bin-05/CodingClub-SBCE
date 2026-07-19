@@ -92,6 +92,24 @@ export default function AdminView({
 }: AdminViewProps) {
   const { user, adminRecord, logout } = useAuth();
 
+  const formatTimestamp = (ts: any) => {
+    if (!ts) return 'Just now';
+    if (typeof ts === 'object' && ts.seconds) {
+      return new Date(ts.seconds * 1000).toLocaleString();
+    }
+    const parsed = new Date(ts);
+    return isNaN(parsed.getTime()) ? 'Just now' : parsed.toLocaleString();
+  };
+
+  const formatTimeOnly = (ts: any) => {
+    if (!ts) return 'Just now';
+    if (typeof ts === 'object' && ts.seconds) {
+      return new Date(ts.seconds * 1000).toLocaleTimeString();
+    }
+    const parsed = new Date(ts);
+    return isNaN(parsed.getTime()) ? 'Just now' : parsed.toLocaleTimeString();
+  };
+
   // Login States
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -1547,9 +1565,9 @@ export default function AdminView({
                               </div>
                               <p className="text-neutral-400 text-xs font-mono">{req.email}</p>
                               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-neutral-500 font-mono">
-                                <span>Requested: {req.firstRequestedAt?.seconds ? new Date(req.firstRequestedAt.seconds * 1000).toLocaleString() : new Date(req.firstRequestedAt).toLocaleString()}</span>
+                                <span>Requested: {formatTimestamp(req.firstRequestedAt)}</span>
                                 <span>Attempts: {req.attemptCount}</span>
-                                <span>Last attempt: {req.lastAttemptAt?.seconds ? new Date(req.lastAttemptAt.seconds * 1000).toLocaleTimeString() : new Date(req.lastAttemptAt).toLocaleTimeString()}</span>
+                                <span>Last attempt: {formatTimeOnly(req.lastAttemptAt)}</span>
                               </div>
                               {isRejected && req.rejectionReason && (
                                 <p className="text-red-400/90 text-xs font-mono border-t border-neutral-900 pt-1.5 mt-1.5">
@@ -1558,7 +1576,7 @@ export default function AdminView({
                               )}
                               {!isPending && req.reviewedBy && (
                                 <p className="text-neutral-500 text-[10px] font-mono">
-                                  Reviewed by: {req.reviewedBy} on {req.reviewedAt?.seconds ? new Date(req.reviewedAt.seconds * 1000).toLocaleString() : new Date(req.reviewedAt).toLocaleString()}
+                                  Reviewed by: {req.reviewedBy} on {formatTimestamp(req.reviewedAt)}
                                 </p>
                               )}
                             </div>
@@ -1634,7 +1652,7 @@ export default function AdminView({
                         </div>
                         <p className="text-neutral-400 text-xs font-mono">{adm.email}</p>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-neutral-500 font-mono">
-                          <span>Approved: {adm.approvedAt?.seconds ? new Date(adm.approvedAt.seconds * 1000).toLocaleString() : new Date(adm.approvedAt).toLocaleString()}</span>
+                          <span>Approved: {formatTimestamp(adm.approvedAt)}</span>
                           <span>By: {adm.approvedBy}</span>
                         </div>
                       </div>
