@@ -298,12 +298,12 @@ function MainApp() {
             )}
 
             {currentTab === 'admin' && (
-              path === '/admin/access-pending' ? (
-                renderAccessPendingPage()
-              ) : (
                 <AdminView 
                   isAuthenticated={isAuthorizedAdmin} 
-                  onLogin={loginWithGoogle} 
+                  onLogin={loginWithGoogle}
+                  currentUser={user}
+                  accessRequest={accessRequest}
+                  onLogout={logout}
                   events={events} 
                   members={members} 
                   gallery={gallery} 
@@ -316,7 +316,6 @@ function MainApp() {
                   path={path}
                   navigate={navigate}
                 />
-              )
             )}
           </main>
         </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Lock, Mail, Key, LayoutDashboard, Calendar, Users, Image as ImageIcon, Settings as SettingsIcon, 
   Plus, Edit2, Trash2, Save, Download, Upload, CheckCircle2, AlertCircle, Eye, EyeOff, FolderOpen,
-  UserCheck, ShieldAlert, History, UserX, AlertOctagon, UserPlus
+  UserCheck, ShieldAlert, History, UserX, AlertOctagon, UserPlus, Clock
 } from 'lucide-react';
 import { Event, Member, GalleryItem, Settings } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,6 +29,9 @@ import { db, auth } from '../services/firebase';
 interface AdminViewProps {
   isAuthenticated: boolean;
   onLogin: () => Promise<void>;
+  currentUser: any | null;
+  accessRequest: any | null;
+  onLogout: () => Promise<void>;
   events: Event[];
   members: Member[];
   gallery: GalleryItem[];
@@ -79,6 +82,9 @@ const ImagePreview = ({ url }: { url: string }) => {
 export default function AdminView({
   isAuthenticated,
   onLogin,
+  currentUser,
+  accessRequest,
+  onLogout,
   events,
   members,
   gallery,
@@ -627,6 +633,51 @@ export default function AdminView({
   };
 
   // --- VIEWS ---
+
+  // Signed in but not yet approved: SHOW ACCESS PENDING CARD
+  if (currentUser && !isAuthenticated) {
+    const isRejected = accessRequest?.status === 'rejected';
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center px-4 py-12" id="admin-pending-container">
+        <div className="w-full max-w-md bg-black/60 backdrop-blur-md border border-neutral-800 rounded-3xl p-8 shadow-[0_0_50px_rgba(255,107,0,0.05)] text-center space-y-6 relative overflow-hidden" id="pending-card">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+          <div className="w-14 h-14 bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center text-orange-500 mx-auto shadow-lg">
+            <Clock className="w-6 h-6 animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-xl font-bold font-mono text-white">Access Verification</h1>
+            <p className="text-neutral-500 text-xs">Signed in as: <span className="text-neutral-300 font-mono">{currentUser?.email}</span></p>
+          </div>
+          <div className="p-5 bg-neutral-950/80 border border-neutral-900 rounded-xl space-y-2 text-xs">
+            <span className="text-[10px] font-mono text-neutral-500 uppercase block tracking-wider">Request Status</span>
+            {isRejected ? (
+              <p className="text-red-500 font-bold font-mono">REJECTED</p>
+            ) : (
+              <p className="text-orange-500 font-bold font-mono animate-pulse">PENDING REVIEW</p>
+            )}
+            <p className="text-neutral-400 mt-2 leading-relaxed text-left">
+              {isRejected
+                ? `Your administrator access request was not approved. ${accessRequest?.rejectionReason ? `Reason: ${accessRequest.rejectionReason}` : 'Please contact the super administrator to reconsider your request.'}`
+                : 'Your account does not currently have administrator access. Your access request has been recorded and will be reviewed by an existing Super Administrator.'}
+            </p>
+          </div>
+          {!isRejected && (
+            <div className="p-3 bg-orange-950/20 border border-orange-900/30 text-orange-400 text-xs rounded-lg text-left">
+              <p className="font-mono font-bold mb-1">What happens next?</p>
+              <p>A Super Admin will approve your account. You will automatically gain access once approved — no need to sign in again.</p>
+            </div>
+          )}
+          <button
+            id="pending-logout-btn"
+            onClick={onLogout}
+            className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white font-semibold text-xs font-mono rounded-xl transition-all cursor-pointer"
+          >
+            Sign Out &amp; Use a Different Account
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Unauthenticated: SHOW LOGIN CARD (Google Sign-In only)
   if (!isAuthenticated) {
