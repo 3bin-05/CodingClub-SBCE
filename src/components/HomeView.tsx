@@ -71,6 +71,7 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
                 style={{ animationDelay: '450ms' }}
                 id="hero-actions"
               >
+                {/* Primary CTA — solid glass, the main conversion path */}
                 <button
                   onClick={() => setTab('events')}
                   className="hero-btn-explore"
@@ -79,15 +80,17 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
                   <span>Explore Events</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
+
+                {/* Secondary CTA — quiet ghost button, distinct id and treatment
+                    so it doesn't compete visually with the primary action */}
                 <button
                   onClick={() => setTab('about')}
-                  className="hero-btn-explore"
-                  id="hero-explore-events-btn"
+                  className="hero-btn-ghost"
+                  id="hero-meet-execom-btn"
                 >
                   <span>Meet Our Execom</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
-
               </div>
             </div>
 

@@ -50,18 +50,21 @@ export default function GalleryView({ gallery, events }: GalleryViewProps) {
       </div>
 
       {/* Album Filters / Selector */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-neutral-900 pb-6" id="gallery-albums-bar">
-        <div className="flex items-center gap-2 text-neutral-500 font-mono text-xs pr-4 border-r border-neutral-900 shrink-0">
+      <div
+        className="flex flex-wrap items-center gap-3 bg-white/[0.03] border border-white/10 backdrop-blur-xl p-4 rounded-2xl shadow-[0_8px_28px_rgba(0,0,0,0.3)]"
+        id="gallery-albums-bar"
+      >
+        <div className="flex items-center gap-2 text-neutral-500 font-mono text-xs pr-4 border-r border-white/10 shrink-0">
           <Layers className="w-4 h-4 text-orange-500" />
           <span>Select Album:</span>
         </div>
 
         <button
           onClick={() => setSelectedAlbum('all')}
-          className={`px-4 py-1.5 rounded-lg text-xs font-mono font-medium transition-all focus:outline-none ${
+          className={`px-4 py-1.5 rounded-full text-xs font-mono font-medium backdrop-blur-sm transition-all focus:outline-none ${
             selectedAlbum === 'all'
-              ? 'bg-orange-600 text-black font-bold'
-              : 'bg-zinc-950/40 border border-neutral-900 text-neutral-400 hover:text-white hover:border-neutral-800'
+              ? 'bg-orange-600 text-black font-bold shadow-[0_0_16px_rgba(255,107,0,0.3)]'
+              : 'bg-white/[0.02] border border-white/10 text-neutral-400 hover:text-white hover:border-white/20'
           }`}
           id="album-btn-all"
         >
@@ -73,10 +76,10 @@ export default function GalleryView({ gallery, events }: GalleryViewProps) {
             key={evt.id}
             id={`album-btn-${evt.id}`}
             onClick={() => setSelectedAlbum(evt.id)}
-            className={`px-4 py-1.5 rounded-lg text-xs font-mono font-medium transition-all shrink-0 max-w-[200px] truncate focus:outline-none ${
+            className={`px-4 py-1.5 rounded-full text-xs font-mono font-medium backdrop-blur-sm transition-all shrink-0 max-w-[200px] truncate focus:outline-none ${
               selectedAlbum === evt.id
-                ? 'bg-orange-600 text-black font-bold'
-                : 'bg-zinc-950/40 border border-neutral-900 text-neutral-400 hover:text-white hover:border-neutral-800'
+                ? 'bg-orange-600 text-black font-bold shadow-[0_0_16px_rgba(255,107,0,0.3)]'
+                : 'bg-white/[0.02] border border-white/10 text-neutral-400 hover:text-white hover:border-white/20'
             }`}
             title={evt.title}
           >
@@ -92,25 +95,47 @@ export default function GalleryView({ gallery, events }: GalleryViewProps) {
             <div
               key={item.id}
               id={`gallery-item-card-${item.id}`}
-              className="bg-zinc-950/40 border border-neutral-900 rounded-xl overflow-hidden p-2.5 hover:border-neutral-800 transition-all group cursor-pointer relative"
+              className="
+                group relative overflow-hidden p-2.5 rounded-2xl cursor-pointer
+                bg-white/[0.03] border border-white/10 backdrop-blur-xl
+                shadow-[0_8px_28px_rgba(0,0,0,0.32)]
+                transition-all duration-500 ease-out
+                hover:-translate-y-1.5 hover:border-orange-500/30
+                hover:shadow-[0_20px_46px_rgba(0,0,0,0.5),0_0_32px_rgba(255,107,0,0.12)]
+              "
               onClick={() => setLightboxIndex(idx)}
             >
-              <div className="aspect-[4/3] rounded-lg overflow-hidden bg-neutral-950 relative">
+              {/* Ambient glow wash on hover */}
+              <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(120%_60%_at_50%_0%,rgba(255,107,0,0.10),transparent_70%)]" />
+
+              <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-neutral-950">
                 <img
                   src={item.image_url}
                   alt={item.caption || "CSE SBCE Coding Club event capture"}
-                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105"
+                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700 ease-out"
                 />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="p-2 bg-black/85 border border-neutral-800 rounded-full text-white">
-                    <Maximize2 className="w-4 h-4 text-orange-500" />
+                {/* Bottom gradient for legibility */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-70 group-hover:opacity-40 transition-opacity duration-500" />
+                {/* Diagonal shine sweep */}
+                <div
+                  className="
+                    absolute top-0 -left-full w-1/2 h-full
+                    bg-gradient-to-r from-transparent via-white/25 to-transparent
+                    skew-x-[-20deg] group-hover:left-[150%]
+                    transition-[left] duration-1000 ease-out
+                  "
+                />
+                {/* Expand icon overlay */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="p-2.5 bg-black/60 border border-white/20 backdrop-blur-md rounded-full text-white shadow-[0_0_20px_rgba(255,107,0,0.2)]">
+                    <Maximize2 className="w-4 h-4 text-orange-400" />
                   </div>
                 </div>
               </div>
 
               {/* Caption and event label */}
-              <div className="p-3 space-y-1.5">
-                <span className="font-mono text-[9px] text-orange-500/80 uppercase block tracking-wider">
+              <div className="relative p-3 space-y-1.5">
+                <span className="font-mono text-[9px] text-orange-400/90 uppercase block tracking-wider">
                   {getEventTitle(item.event_id)}
                 </span>
                 <p className="text-neutral-300 text-xs line-clamp-2 leading-relaxed">
@@ -120,7 +145,7 @@ export default function GalleryView({ gallery, events }: GalleryViewProps) {
             </div>
           ))
         ) : (
-          <div className="col-span-4 border border-dashed border-neutral-850 rounded-xl p-16 text-center text-neutral-500 font-mono text-xs">
+          <div className="col-span-4 border border-dashed border-white/10 rounded-2xl p-16 text-center text-neutral-500 font-mono text-xs bg-white/[0.02] backdrop-blur-sm">
             No photographs have been uploaded to this specific album yet. Check back later!
           </div>
         )}
@@ -129,7 +154,7 @@ export default function GalleryView({ gallery, events }: GalleryViewProps) {
       {/* Lightbox Modal overlay */}
       {lightboxIndex !== null && filteredGallery[lightboxIndex] && (
         <div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 p-4"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-4"
           onClick={() => setLightboxIndex(null)}
           id="gallery-lightbox"
         >
@@ -141,7 +166,7 @@ export default function GalleryView({ gallery, events }: GalleryViewProps) {
             <button
               id="lightbox-close-btn"
               onClick={() => setLightboxIndex(null)}
-              className="px-4 py-1.5 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-white rounded-lg text-xs font-mono transition-colors focus:outline-none"
+              className="px-4 py-1.5 bg-white/[0.06] border border-white/15 backdrop-blur-md hover:bg-white/[0.12] hover:border-white/25 text-white rounded-full text-xs font-mono transition-all focus:outline-none"
             >
               Close [Esc]
             </button>
@@ -153,7 +178,7 @@ export default function GalleryView({ gallery, events }: GalleryViewProps) {
             <button
               id="lightbox-prev-btn"
               onClick={handlePrev}
-              className="absolute left-2 md:-left-16 p-3 bg-neutral-900/85 border border-neutral-800 hover:bg-neutral-800 text-white rounded-full transition-all focus:outline-none"
+              className="absolute left-2 md:-left-16 p-3 bg-white/[0.06] border border-white/15 backdrop-blur-md hover:bg-white/[0.12] hover:border-orange-500/30 text-white rounded-full transition-all focus:outline-none"
             >
               <ChevronLeft className="w-5 h-5 text-orange-500" />
             </button>
@@ -162,7 +187,7 @@ export default function GalleryView({ gallery, events }: GalleryViewProps) {
             <img
               src={filteredGallery[lightboxIndex].image_url}
               alt={filteredGallery[lightboxIndex].caption || "Full size photo capture"}
-              className="max-w-full max-h-[70vh] object-contain rounded-lg border border-neutral-900 shadow-2xl"
+              className="max-w-full max-h-[70vh] object-contain rounded-xl border border-white/10 shadow-[0_24px_70px_rgba(0,0,0,0.6)]"
               onClick={(e) => e.stopPropagation()}
             />
 
@@ -170,7 +195,7 @@ export default function GalleryView({ gallery, events }: GalleryViewProps) {
             <button
               id="lightbox-next-btn"
               onClick={handleNext}
-              className="absolute right-2 md:-right-16 p-3 bg-neutral-900/85 border border-neutral-800 hover:bg-neutral-800 text-white rounded-full transition-all focus:outline-none"
+              className="absolute right-2 md:-right-16 p-3 bg-white/[0.06] border border-white/15 backdrop-blur-md hover:bg-white/[0.12] hover:border-orange-500/30 text-white rounded-full transition-all focus:outline-none"
             >
               <ChevronRight className="w-5 h-5 text-orange-500" />
             </button>
@@ -178,10 +203,10 @@ export default function GalleryView({ gallery, events }: GalleryViewProps) {
 
           {/* Bottom Info Card */}
           <div
-            className="w-full max-w-4xl bg-zinc-950 border border-neutral-800 rounded-xl p-5 mt-6 space-y-2 text-center"
+            className="relative w-full max-w-4xl bg-white/[0.04] border border-white/10 backdrop-blur-2xl rounded-2xl p-5 mt-6 space-y-2 text-center shadow-[0_16px_44px_rgba(0,0,0,0.5)]"
             onClick={(e) => e.stopPropagation()}
           >
-            <span className="font-mono text-[10px] text-orange-500 uppercase tracking-widest block font-bold">
+            <span className="font-mono text-[10px] text-orange-400 uppercase tracking-widest block font-bold">
               {getEventTitle(filteredGallery[lightboxIndex].event_id)}
             </span>
             <p className="text-neutral-300 text-sm leading-relaxed max-w-2xl mx-auto">
