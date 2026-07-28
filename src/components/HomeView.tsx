@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Calendar, Trophy, FolderCode, ArrowUpRight, ArrowRight, Github, Linkedin, Instagram, Mail, MapPin, Zap, GitBranch } from 'lucide-react';
+import { Users, Calendar, Trophy, FolderCode, ArrowUpRight, ArrowRight, Github, Linkedin, Instagram, Mail, MapPin, Zap, GitBranch, Sparkles } from 'lucide-react';
 import { Event, Member, Settings } from '../types';
 import heroImage from '../assets/images/HeroBG.png';
 
@@ -64,9 +64,19 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
                 style={{ fontSize: 'clamp(2.75rem, 8vw, 6.25rem)' }}
                 id="hero-headline"
               >
-                <span className="block hero-reveal" style={{ animationDelay: '90ms' }}>CODING</span>
-                <span className="block hero-reveal" style={{ animationDelay: '180ms' }}>CLUB</span>
-                <span className="block hero-reveal text-orange-500" style={{ animationDelay: '270ms' }}>SBCE</span>
+                {settings.heroText ? (
+                  settings.heroText.split(' ').map((word, index, arr) => (
+                    <span key={index} className={`block hero-reveal ${index === arr.length - 1 ? 'text-orange-500' : ''}`} style={{ animationDelay: `${(index + 1) * 90}ms` }}>
+                      {word}
+                    </span>
+                  ))
+                ) : (
+                  <>
+                    <span className="block hero-reveal" style={{ animationDelay: '90ms' }}>CODING</span>
+                    <span className="block hero-reveal" style={{ animationDelay: '180ms' }}>CLUB</span>
+                    <span className="block hero-reveal text-orange-500" style={{ animationDelay: '270ms' }}>SBCE</span>
+                  </>
+                )}
               </h1>
 
               <p
@@ -74,9 +84,7 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
                 style={{ animationDelay: '360ms' }}
                 id="hero-tagline"
               >
-                The student developer collective at SBCE. We run hackathons, ship
-                open-source between lectures, and turn CSE coursework into things
-                people actually use.
+                {settings.heroTagline || "The student developer collective at SBCE. We run hackathons, ship open-source between lectures, and turn CSE coursework into things people actually use."}
               </p>
 
               <div
@@ -88,45 +96,68 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
                 <button
                   onClick={() => setTab('events')}
                   className="hero-btn-explore"
-                  id="hero-explore-events-btn"
                 >
-                  <span>Explore Events</span>
+                  <span>Explore Schedule</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
-                {/* Secondary CTA — quiet ghost button, distinct id and treatment
-                    so it doesn't compete visually with the primary action */}
+                {/* Secondary CTA — ghost variant */}
                 <button
                   onClick={() => setTab('about')}
-                  className="hero-btn-ghost"
-                  id="hero-meet-execom-btn"
+                  className="
+    group relative flex items-center gap-2 px-6 py-3 rounded-full overflow-hidden
+    bg-white/[0.03] border border-white/10 backdrop-blur-xl
+    text-neutral-300 text-sm font-mono
+    shadow-[0_8px_24px_rgba(0,0,0,0.35)]
+    transition-all duration-500 ease-out
+    hover:-translate-y-0.5 hover:text-white hover:border-orange-500/30
+    hover:shadow-[0_14px_36px_rgba(0,0,0,0.45),0_0_24px_rgba(255,107,0,0.14)]
+  "
                 >
-                  <span>Meet Our Execom</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  {/* subtle diagonal shine sweep, same trick used on the event cards */}
+                  <span
+                    className="
+      pointer-events-none absolute top-0 -left-full w-1/2 h-full
+      bg-gradient-to-r from-transparent via-white/10 to-transparent
+      skew-x-[-20deg] group-hover:left-[150%]
+      transition-[left] duration-1000 ease-out
+    "
+                  />
+                  <span className="relative z-10">Meet Execom</span>
                 </button>
               </div>
             </div>
 
-            {/* ── Right: signature element — the club as a config file ── */}
-            <div className="lg:col-span-5 hero-reveal" style={{ animationDelay: '300ms' }} id="hero-panel-wrap">
+            {/* ── Right: visual anchor (Interactive Code Panel with glowing bezel) ── */}
+            <div className="lg:col-span-5 relative" id="hero-interactive-panel">
+              {/* Outer ambient glow ring around the code panel */}
+              <div
+                className="
+                  pointer-events-none absolute -inset-2 rounded-3xl opacity-60
+                  bg-gradient-to-r from-orange-500/20 via-orange-600/10 to-amber-500/20
+                  blur-xl transition-all duration-700 group-hover:opacity-100
+                "
+              />
+
               <div
                 className="
                   relative rounded-2xl overflow-hidden
-                  bg-white/[0.03] border border-white/10 backdrop-blur-xl
-                  shadow-[0_20px_60px_rgba(0,0,0,0.5)]
+                  bg-neutral-950/90 border border-white/10 backdrop-blur-xl
+                  shadow-[0_20px_60px_rgba(0,0,0,0.6)]
+                  transition-all duration-500 hover:border-orange-500/30
                 "
-                id="hero-code-panel"
               >
-                {/* Tab strip */}
-                <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-black/40">
-                  <div className="flex items-center gap-2 text-neutral-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500/70" />
-                    <span className="text-[11px] font-mono">club.config.ts</span>
+                {/* Header bar */}
+                <div className="flex items-center justify-between px-4 py-3 bg-white/[0.03] border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block" />
+                    <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block" />
+                    <span className="w-3 h-3 rounded-full bg-green-500/80 inline-block" />
                   </div>
-                  <div className="flex items-center gap-1.5 text-neutral-600">
-                    <GitBranch className="w-3 h-3" />
-                    <span className="text-[10px] font-mono">main</span>
-                  </div>
+                  <span className="text-[11px] font-mono text-neutral-500 tracking-wider uppercase">
+                    sbce.config.ts
+                  </span>
+                  <div className="w-12" /> {/* balancer */}
                 </div>
 
                 {/* Code body */}
@@ -139,7 +170,7 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
                       <span className="text-orange-500">export const</span> club = {'{'}
                     </span>
                     <span className="hero-code-line block pl-4" style={{ animationDelay: '780ms' }}>
-                      <span className="text-neutral-500">name:</span> <span className="text-white">"SBCE Coding Club"</span>,
+                      <span className="text-neutral-500">name:</span> <span className="text-white">"{settings.heroText || "SBCE Coding Club"}"</span>,
                     </span>
                     <span className="hero-code-line block pl-4" style={{ animationDelay: '860ms' }}>
                       <span className="text-neutral-500">dept:</span> <span className="text-white">"Computer Science & Engineering"</span>,
@@ -177,11 +208,11 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
         <section className="border-t border-b border-neutral-900 py-10" id="stats-section">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8" id="stats-grid">
             {[
-              { label: 'Active Members', value: `${settings.statistics?.members || 240}+`, icon: Users },
-              { label: 'Events Hosted', value: settings.statistics?.events || 28, icon: Calendar },
-              { label: 'Hackathons', value: settings.statistics?.hackathons || 5, icon: Trophy },
-              { label: 'Open-Source Projects', value: `${settings.statistics?.projects || 12}+`, icon: FolderCode },
-              { label: 'Years Active', value: `${settings.statistics?.yearsActive || 5}Y`, icon: Zap },
+              { label: 'Active Members', value: `${settings.statistics?.members ?? 240}+`, icon: Users },
+              { label: 'Events Hosted', value: settings.statistics?.events ?? 28, icon: Calendar },
+              { label: 'Hackathons', value: settings.statistics?.hackathons ?? 5, icon: Trophy },
+              { label: 'Open-Source Projects', value: `${settings.statistics?.projects ?? 12}+`, icon: FolderCode },
+              { label: 'Years Active', value: `${settings.statistics?.yearsActive ?? 5}Y`, icon: Zap },
             ].map((stat, i) => (
               <div key={i} id={`stat-card-${i}`} className="text-center md:text-left space-y-2 p-4 bg-zinc-950/40 border border-neutral-900 rounded-xl hover:border-neutral-800 transition-colors">
                 <div className="flex items-center justify-center md:justify-start gap-2 text-neutral-500">
@@ -304,7 +335,7 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
             <div className="md:col-span-5 space-y-4">
               <span className="text-white font-mono font-bold tracking-tight text-base flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
-                CSE SBCE CODING CLUB
+                CODING CLUB
               </span>
               <p className="text-xs text-neutral-400 leading-relaxed max-w-sm">
                 Sree Buddha College of Engineering, Alappuzha, Kerala. An active developer incubator organizing code seminars, cross-framework camps, and design sprint challenges.
