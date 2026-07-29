@@ -8,8 +8,8 @@ interface ContactViewProps {
 
 export default function ContactView({ settings }: ContactViewProps) {
   const socials = settings.socialLinks || {
-    email: "sbcecodingclub@gmail.com",
-    instagram: "https://instagram.com/sbce_codingclub",
+    email: "codingclubsbce@gmail.com",
+    instagram: "https://www.instagram.com/codingclub_sbce/",
     linkedin: "https://linkedin.com/company/sbce-codingclub",
     github: "https://github.com/sbce-codingclub",
     location: "Sree Buddha College of Engineering, Pattoor, Nooranad, Alappuzha, Kerala - 690529",
