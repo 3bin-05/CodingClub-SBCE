@@ -144,6 +144,13 @@ export default function AdminView({
   const [memberForm, setMemberForm] = useState<Partial<Member>>({});
 
   const [galleryForm, setGalleryForm] = useState<Partial<GalleryItem>>({});
+  const [settingsForm, setSettingsForm] = useState<Settings>(settings);
+
+  useEffect(() => {
+    if (settings) {
+      setSettingsForm(settings);
+    }
+  }, [settings]);
 
   // Sync activeTab with URL Path changes
   useEffect(() => {
@@ -1535,7 +1542,8 @@ export default function AdminView({
                     <input
                       id="input-hero-text"
                       type="text"
-                      defaultValue={settings.heroText}
+                      value={settingsForm.heroText || ''}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, heroText: e.target.value })}
                       className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none"
                     />
                   </div>
@@ -1544,7 +1552,8 @@ export default function AdminView({
                     <input
                       id="input-hero-subtext"
                       type="text"
-                      defaultValue={settings.heroSubtext}
+                      value={settingsForm.heroSubtext || ''}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, heroSubtext: e.target.value })}
                       className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none"
                     />
                   </div>
@@ -1554,17 +1563,19 @@ export default function AdminView({
                   <textarea
                     id="input-hero-tagline"
                     rows={2}
-                    defaultValue={settings.heroTagline}
+                    value={settingsForm.heroTagline || ''}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, heroTagline: e.target.value })}
                     className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white focus:outline-none"
                   ></textarea>
                 </div>
                 <button
                   id="save-hero-settings-btn"
                   onClick={() => {
-                    const heroText = (document.getElementById('input-hero-text') as HTMLInputElement).value;
-                    const heroSubtext = (document.getElementById('input-hero-subtext') as HTMLInputElement).value;
-                    const heroTagline = (document.getElementById('input-hero-tagline') as HTMLTextAreaElement).value;
-                    saveSettings('Hero', { heroText, heroSubtext, heroTagline });
+                    saveSettings('Hero', {
+                      heroText: settingsForm.heroText,
+                      heroSubtext: settingsForm.heroSubtext,
+                      heroTagline: settingsForm.heroTagline
+                    });
                   }}
                   className="px-4 py-1.5 bg-orange-600 hover:bg-orange-500 text-black font-bold text-xs font-mono rounded-lg flex items-center gap-1 focus:outline-none cursor-pointer"
                 >
@@ -1578,41 +1589,80 @@ export default function AdminView({
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-mono text-neutral-400">Members</label>
-                    <input id="input-stat-members" type="number" defaultValue={settings.statistics?.members ?? 240} className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none" />
+                    <input
+                      id="input-stat-members"
+                      type="number"
+                      value={settingsForm.statistics?.members ?? 240}
+                      onChange={(e) => setSettingsForm({
+                        ...settingsForm,
+                        statistics: { ...settingsForm.statistics, members: Number(e.target.value) }
+                      })}
+                      className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-mono text-neutral-400">Events</label>
-                    <input id="input-stat-events" type="number" defaultValue={settings.statistics?.events ?? 28} className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none" />
+                    <input
+                      id="input-stat-events"
+                      type="number"
+                      value={settingsForm.statistics?.events ?? 28}
+                      onChange={(e) => setSettingsForm({
+                        ...settingsForm,
+                        statistics: { ...settingsForm.statistics, events: Number(e.target.value) }
+                      })}
+                      className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-mono text-neutral-400">Hackathons</label>
-                    <input id="input-stat-hacks" type="number" defaultValue={settings.statistics?.hackathons ?? 5} className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none" />
+                    <input
+                      id="input-stat-hacks"
+                      type="number"
+                      value={settingsForm.statistics?.hackathons ?? 5}
+                      onChange={(e) => setSettingsForm({
+                        ...settingsForm,
+                        statistics: { ...settingsForm.statistics, hackathons: Number(e.target.value) }
+                      })}
+                      className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-mono text-neutral-400">Projects</label>
-                    <input id="input-stat-projects" type="number" defaultValue={settings.statistics?.projects ?? 12} className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none" />
+                    <input
+                      id="input-stat-projects"
+                      type="number"
+                      value={settingsForm.statistics?.projects ?? 12}
+                      onChange={(e) => setSettingsForm({
+                        ...settingsForm,
+                        statistics: { ...settingsForm.statistics, projects: Number(e.target.value) }
+                      })}
+                      className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-mono text-neutral-400">Years Active</label>
-                    <input id="input-stat-years" type="number" defaultValue={settings.statistics?.yearsActive ?? 5} className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none" />
+                    <input
+                      id="input-stat-years"
+                      type="number"
+                      value={settingsForm.statistics?.yearsActive ?? 5}
+                      onChange={(e) => setSettingsForm({
+                        ...settingsForm,
+                        statistics: { ...settingsForm.statistics, yearsActive: Number(e.target.value) }
+                      })}
+                      className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none"
+                    />
                   </div>
                 </div>
                 <button
                   id="save-stats-settings-btn"
                   onClick={() => {
-                    const membersNum = Number((document.getElementById('input-stat-members') as HTMLInputElement).value);
-                    const eventsNum = Number((document.getElementById('input-stat-events') as HTMLInputElement).value);
-                    const hackathonsNum = Number((document.getElementById('input-stat-hacks') as HTMLInputElement).value);
-                    const projectsNum = Number((document.getElementById('input-stat-projects') as HTMLInputElement).value);
-                    const yearsActiveNum = Number((document.getElementById('input-stat-years') as HTMLInputElement).value);
-                    
                     saveSettings('Statistics', {
                       statistics: {
-                        members: membersNum,
-                        events: eventsNum,
-                        hackathons: hackathonsNum,
-                        projects: projectsNum,
-                        yearsActive: yearsActiveNum
+                        members: settingsForm.statistics?.members ?? 240,
+                        events: settingsForm.statistics?.events ?? 28,
+                        hackathons: settingsForm.statistics?.hackathons ?? 5,
+                        projects: settingsForm.statistics?.projects ?? 12,
+                        yearsActive: settingsForm.statistics?.yearsActive ?? 5
                       }
                     });
                   }}
@@ -1628,42 +1678,81 @@ export default function AdminView({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-mono text-neutral-400">Email Address</label>
-                    <input id="input-link-email" type="email" defaultValue={settings.socialLinks?.email} className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none" />
+                    <input
+                      id="input-link-email"
+                      type="email"
+                      value={settingsForm.socialLinks?.email || ''}
+                      onChange={(e) => setSettingsForm({
+                        ...settingsForm,
+                        socialLinks: { ...settingsForm.socialLinks, email: e.target.value }
+                      })}
+                      className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-mono text-neutral-400">Instagram URL</label>
-                    <input id="input-link-insta" type="url" defaultValue={settings.socialLinks?.instagram} className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none" />
+                    <input
+                      id="input-link-insta"
+                      type="url"
+                      value={settingsForm.socialLinks?.instagram || ''}
+                      onChange={(e) => setSettingsForm({
+                        ...settingsForm,
+                        socialLinks: { ...settingsForm.socialLinks, instagram: e.target.value }
+                      })}
+                      className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-mono text-neutral-400">LinkedIn URL</label>
-                    <input id="input-link-linkd" type="url" defaultValue={settings.socialLinks?.linkedin} className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none" />
+                    <input
+                      id="input-link-linkd"
+                      type="url"
+                      value={settingsForm.socialLinks?.linkedin || ''}
+                      onChange={(e) => setSettingsForm({
+                        ...settingsForm,
+                        socialLinks: { ...settingsForm.socialLinks, linkedin: e.target.value }
+                      })}
+                      className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-mono text-neutral-400">GitHub Organization URL</label>
-                    <input id="input-link-githb" type="url" defaultValue={settings.socialLinks?.github} className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none" />
+                    <input
+                      id="input-link-githb"
+                      type="url"
+                      value={settingsForm.socialLinks?.github || ''}
+                      onChange={(e) => setSettingsForm({
+                        ...settingsForm,
+                        socialLinks: { ...settingsForm.socialLinks, github: e.target.value }
+                      })}
+                      className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none"
+                    />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-mono text-neutral-400">Embedded Google Map Embed URL (Src)</label>
-                  <input id="input-link-map" type="text" defaultValue={settings.socialLinks?.mapEmbedUrl} className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none" />
+                  <input
+                    id="input-link-map"
+                    type="text"
+                    value={settingsForm.socialLinks?.mapEmbedUrl || ''}
+                    onChange={(e) => setSettingsForm({
+                      ...settingsForm,
+                      socialLinks: { ...settingsForm.socialLinks, mapEmbedUrl: e.target.value }
+                    })}
+                    className="w-full bg-black border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white font-mono focus:outline-none"
+                  />
                 </div>
                 <button
                   id="save-socials-settings-btn"
                   onClick={() => {
-                    const emailL = (document.getElementById('input-link-email') as HTMLInputElement).value;
-                    const instaL = (document.getElementById('input-link-insta') as HTMLInputElement).value;
-                    const linkdL = (document.getElementById('input-link-linkd') as HTMLInputElement).value;
-                    const githbL = (document.getElementById('input-link-githb') as HTMLInputElement).value;
-                    const mapL = (document.getElementById('input-link-map') as HTMLInputElement).value;
-                    
                     saveSettings('Social Links', {
                       socialLinks: {
-                        email: emailL,
-                        instagram: instaL,
-                        linkedin: linkdL,
-                        github: githbL,
-                        mapEmbedUrl: mapL,
-                        location: settings.socialLinks?.location || "Sree Buddha College of Engineering, Pattoor, Nooranad, Alappuzha, Kerala - 690529"
+                        email: settingsForm.socialLinks?.email || '',
+                        instagram: settingsForm.socialLinks?.instagram || '',
+                        linkedin: settingsForm.socialLinks?.linkedin || '',
+                        github: settingsForm.socialLinks?.github || '',
+                        mapEmbedUrl: settingsForm.socialLinks?.mapEmbedUrl || '',
+                        location: settingsForm.socialLinks?.location || "Sree Buddha College of Engineering, Pattoor, Nooranad, Alappuzha, Kerala - 690529"
                       }
                     });
                   }}

@@ -69,7 +69,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubAdmin = onSnapshot(
         doc(db, 'admins', firebaseUser.uid),
         (snap) => setAdminRecord(snap.exists() ? snap.data() : null),
-        (err)  => console.error('[Auth] admins listener error:', err)
+        (err)  => {
+          console.error('[Auth] admins listener error:', err);
+          setLoading(false);
+        }
       );
 
       // Listen to this user's access request document

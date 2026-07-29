@@ -43,48 +43,67 @@ function MainApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Default settings constant for empty database or fallback
+  const DEFAULT_SETTINGS: Settings = {
+    heroText: "Coding Club SBCE",
+    heroSubtext: "Sree Buddha College of Engineering, Pattoor",
+    heroTagline: "The student developer collective at SBCE. We run hackathons, ship open-source between lectures, and turn CSE coursework into things people actually use.",
+    aboutHistory: "Established in 2021 by the Department of Computer Science & Engineering, the SBCE Coding Club has grown into the campus hub for technological leadership. We connect aspiring programmers, open-source advocates, and problem solvers to learn together, build for the community, and prepare for premium tech careers.",
+    aboutMission: "To nurture a robust and inclusive developer ecosystem on campus where students learn modern engineering practices by doing.",
+    aboutVision: "To produce top-tier technical talent capable of engineering solutions for national and global challenges, setting a benchmark for student-run technical communities in Kerala.",
+    aboutObjectives: [
+      "Conduct weekly code-along labs and specialized bootcamps on industry-relevant frameworks.",
+      "Foster active open-source contributions on GitHub and participation in global hackathons.",
+      "Deliver rigorous peer mentorship for technical interviews, DSA, and competitive coding.",
+      "Design and deploy open-source utility systems to solve immediate needs of the college community."
+    ],
+    aboutCoordinators: [
+      { name: "Dr. Saji V.R.", title: "HOD, CSE Dept" },
+      { name: "Prof. Soumya Murali", title: "Assistant Professor, CSE Dept" }
+    ],
+    statistics: {
+      members: 240,
+      events: 28,
+      hackathons: 5,
+      projects: 12,
+      yearsActive: 5
+    },
+    socialLinks: {
+      email: "codingclub@sbce.ac.in",
+      instagram: "https://instagram.com/sbce_codingclub",
+      linkedin: "https://linkedin.com/company/sbce-codingclub",
+      github: "https://github.com/sbce-codingclub",
+      location: "Sree Buddha College of Engineering, Pattoor, Nooranad, Alappuzha, Kerala - 690529",
+      mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3936.815309325603!2d76.6042171147889!3d9.171249993421379!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b06117f77777777%3A0x6b4f707cfbdfa9f7!2sSree%20Buddha%20College%20of%20Engineering%20%2C%20Pattoor!5e0!3m2!1sen!2sin!4v1626245999999!5m2!1sen!2sin"
+    },
+    footerText: "© 2026 CSE SBCE Coding Club. Engineered for developers, by developers."
+  };
+
   // Real-time Firestore Listeners
   useEffect(() => {
     // 1. Settings Listener
     const unsubSettings = onSnapshot(doc(db, 'settings', 'site'), (docSnap) => {
       if (docSnap.exists()) {
-        setSettings(docSnap.data() as Settings);
-      } else {
-        // Fallback default settings for empty database
+        const fetched = docSnap.data() as Settings;
         setSettings({
-          heroText: "CSE SBCE Coding Club",
-          heroSubtext: "Sree Buddha College of Engineering, Pattoor",
-          heroTagline: "Empowering the next generation of developers and software architects through collaborative hacking, hands-on bootcamps, and engineering excellence.",
-          aboutHistory: "Established in 2021 by the Department of Computer Science & Engineering, the SBCE Coding Club has grown into the campus hub for technological leadership.",
-          aboutMission: "To nurture a robust and inclusive developer ecosystem on campus where students learn modern engineering practices by doing.",
-          aboutVision: "To produce top-tier technical talent capable of engineering solutions for national and global challenges, setting a benchmark for student-run technical communities in Kerala.",
-          aboutObjectives: [
-            "Conduct weekly code-along labs and specialized bootcamps on industry-relevant frameworks."
-          ],
-          aboutCoordinators: [
-            { name: "Dr. Saji V.R.", title: "HOD, CSE Dept" }
-          ],
+          ...DEFAULT_SETTINGS,
+          ...fetched,
           statistics: {
-            members: 240,
-            events: 28,
-            hackathons: 5,
-            projects: 12,
-            yearsActive: 5
+            ...DEFAULT_SETTINGS.statistics,
+            ...(fetched.statistics || {})
           },
           socialLinks: {
-            email: "codingclub@sbce.ac.in",
-            instagram: "https://instagram.com/sbce_codingclub",
-            linkedin: "https://linkedin.com/company/sbce-codingclub",
-            github: "https://github.com/sbce-codingclub",
-            location: "Sree Buddha College of Engineering, Pattoor, Nooranad, Alappuzha, Kerala - 690529",
-            mapEmbedUrl: ""
-          },
-          footerText: "© 2026 CSE SBCE Coding Club. Engineered for developers, by developers."
+            ...DEFAULT_SETTINGS.socialLinks,
+            ...(fetched.socialLinks || {})
+          }
         });
+      } else {
+        setSettings(DEFAULT_SETTINGS);
       }
       setIsLoading(false);
     }, (err) => {
-      console.error('Error fetching settings from Firestore:', err);
+      console.error('Error fetching settings from Firestore, using defaults:', err);
+      setSettings(DEFAULT_SETTINGS);
       setIsLoading(false);
     });
 
@@ -95,6 +114,8 @@ function MainApp() {
         eventsList.push({ id: d.id, ...d.data() } as Event);
       });
       setEvents(eventsList);
+    }, (err) => {
+      console.error('Error fetching events from Firestore:', err);
     });
 
     // 3. Execom Members Listener
@@ -105,6 +126,8 @@ function MainApp() {
       });
       membersList.sort((a, b) => (a.display_order || 99) - (b.display_order || 99));
       setMembers(membersList);
+    }, (err) => {
+      console.error('Error fetching members from Firestore:', err);
     });
 
     // 4. Gallery Listener
@@ -114,6 +137,8 @@ function MainApp() {
         galleryList.push({ id: d.id, ...d.data() } as GalleryItem);
       });
       setGallery(galleryList);
+    }, (err) => {
+      console.error('Error fetching gallery from Firestore:', err);
     });
 
     return () => {
