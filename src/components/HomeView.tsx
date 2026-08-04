@@ -64,28 +64,22 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
                 style={{ fontSize: 'clamp(2.75rem, 8vw, 6.25rem)' }}
                 id="hero-headline"
               >
-                {settings.heroText ? (
-                  settings.heroText.split(' ').map((word, index, arr) => (
-                    <span key={index} className={`block hero-reveal ${index === arr.length - 1 ? 'text-orange-500' : ''}`} style={{ animationDelay: `${(index + 1) * 90}ms` }}>
-                      {word}
-                    </span>
-                  ))
-                ) : (
-                  <>
-                    <span className="block hero-reveal" style={{ animationDelay: '90ms' }}>CODING</span>
-                    <span className="block hero-reveal" style={{ animationDelay: '180ms' }}>CLUB</span>
-                    <span className="block hero-reveal text-orange-500" style={{ animationDelay: '270ms' }}>SBCE</span>
-                  </>
-                )}
+                {settings.heroText && settings.heroText.split(' ').map((word, index, arr) => (
+                  <span key={index} className={`block hero-reveal ${index === arr.length - 1 ? 'text-orange-500' : ''}`} style={{ animationDelay: `${(index + 1) * 90}ms`}}>
+                    {word}
+                  </span>
+                ))}
               </h1>
 
-              <p
-                className="hero-reveal max-w-md text-neutral-400 text-sm md:text-base leading-relaxed"
-                style={{ animationDelay: '360ms' }}
-                id="hero-tagline"
-              >
-                {settings.heroTagline || "The student developer collective at SBCE. We run hackathons, ship open-source between lectures, and turn CSE coursework into things people actually use."}
-              </p>
+              {settings.heroTagline && (
+                <p
+                  className="hero-reveal max-w-md text-neutral-400 text-sm md:text-base leading-relaxed"
+                  style={{ animationDelay: '360ms' }}
+                  id="hero-tagline"
+                >
+                  {settings.heroTagline}
+                </p>
+              )}
 
               <div
                 className="hero-reveal flex flex-wrap items-center gap-4"
@@ -170,7 +164,7 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
                       <span className="text-orange-500">export const</span> club = {'{'}
                     </span>
                     <span className="hero-code-line block pl-4" style={{ animationDelay: '780ms' }}>
-                      <span className="text-neutral-500">name:</span> <span className="text-white">"{settings.heroText || "SBCE Coding Club"}"</span>,
+                      <span className="text-neutral-500">name:</span> <span className="text-white">"{settings.heroText}"</span>,
                     </span>
                     <span className="hero-code-line block pl-4" style={{ animationDelay: '860ms' }}>
                       <span className="text-neutral-500">dept:</span> <span className="text-white">"Computer Science & Engineering"</span>,
@@ -208,11 +202,11 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
         <section className="border-t border-b border-neutral-900 py-10" id="stats-section">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8" id="stats-grid">
             {[
-              { label: 'Active Members', value: `${settings.statistics?.members ?? 240}+`, icon: Users },
-              { label: 'Events Hosted', value: settings.statistics?.events ?? 28, icon: Calendar },
-              { label: 'Hackathons', value: settings.statistics?.hackathons ?? 5, icon: Trophy },
-              { label: 'Open-Source Projects', value: `${settings.statistics?.projects ?? 12}+`, icon: FolderCode },
-              { label: 'Years Active', value: `${settings.statistics?.yearsActive ?? 5}Y`, icon: Zap },
+              { label: 'Active Members', value: `${settings.statistics?.members ?? 0}+`, icon: Users },
+              { label: 'Events Hosted', value: settings.statistics?.events ?? 0, icon: Calendar },
+              { label: 'Hackathons', value: settings.statistics?.hackathons ?? 0, icon: Trophy },
+              { label: 'Open-Source Projects', value: `${settings.statistics?.projects ?? 0}+`, icon: FolderCode },
+              { label: 'Years Active', value: `${settings.statistics?.yearsActive ?? 0}Y`, icon: Zap },
             ].map((stat, i) => (
               <div key={i} id={`stat-card-${i}`} className="text-center md:text-left space-y-2 p-4 bg-zinc-950/40 border border-neutral-900 rounded-xl hover:border-neutral-800 transition-colors">
                 <div className="flex items-center justify-center md:justify-start gap-2 text-neutral-500">
@@ -337,32 +331,38 @@ export default function HomeView({ settings, events, members, setTab, onSelectEv
                 <span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
                 CODING CLUB
               </span>
-              <p className="text-xs text-neutral-400 leading-relaxed max-w-sm">
-                Sree Buddha College of Engineering, Alappuzha, Kerala. An active developer incubator organizing code seminars, cross-framework camps, and design sprint challenges.
-              </p>
+              {settings.heroSubtext && (
+                <p className="text-xs text-neutral-400 leading-relaxed max-w-sm">
+                  {settings.heroSubtext}
+                </p>
+              )}
             </div>
-            <div className="md:col-span-4 space-y-3">
-              <span className="text-white text-xs uppercase font-mono tracking-wider">Campus Headquarters</span>
-              <p className="text-xs text-neutral-400 leading-relaxed flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                <span>Department of Computer Science & Engineering,<br />Pattoor PO, Nooranad, Kerala 690529</span>
-              </p>
-            </div>
+            {settings.socialLinks?.location && (
+              <div className="md:col-span-4 space-y-3">
+                <span className="text-white text-xs uppercase font-mono tracking-wider">Campus Headquarters</span>
+                <p className="text-xs text-neutral-400 leading-relaxed flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                  <span>{settings.socialLinks.location}</span>
+                </p>
+              </div>
+            )}
             <div className="md:col-span-3 space-y-3">
               <span className="text-white text-xs uppercase font-mono tracking-wider">Digital Outreach</span>
               <div className="flex gap-4">
-                <a href={settings.socialLinks?.github} target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Github className="w-4 h-4" /></a>
-                <a href={settings.socialLinks?.linkedin} target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Linkedin className="w-4 h-4" /></a>
-                <a href={settings.socialLinks?.instagram} target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Instagram className="w-4 h-4" /></a>
-                <a href={`mailto:${settings.socialLinks?.email}`} className="hover:text-white transition-colors"><Mail className="w-4 h-4" /></a>
+                {settings.socialLinks?.github && <a href={settings.socialLinks.github} target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Github className="w-4 h-4" /></a>}
+                {settings.socialLinks?.linkedin && <a href={settings.socialLinks.linkedin} target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Linkedin className="w-4 h-4" /></a>}
+                {settings.socialLinks?.instagram && <a href={settings.socialLinks.instagram} target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Instagram className="w-4 h-4" /></a>}
+                {settings.socialLinks?.email && <a href={`mailto:${settings.socialLinks.email}`} className="hover:text-white transition-colors"><Mail className="w-4 h-4" /></a>}
               </div>
-              <p className="text-xs text-neutral-400 pt-1 font-mono">
-                {settings.socialLinks?.email || "codingclub@sbce.ac.in"}
-              </p>
+              {settings.socialLinks?.email && (
+                <p className="text-xs text-neutral-400 pt-1 font-mono">
+                  {settings.socialLinks.email}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-10 mt-10 border-t border-neutral-950 text-xs text-neutral-500" id="footer-bottom">
-            <span className="font-mono">{settings.footerText || "© 2026 CSE SBCE Coding Club. Engineered for developers, by developers."}</span>
+            {settings.footerText && <span className="font-mono">{settings.footerText}</span>}
             <div className="flex gap-6 font-mono text-[10px]">
               <button onClick={() => setTab('admin')} className="hover:text-orange-500 transition-colors">Admin Portal</button>
               <span>v1.0.0</span>

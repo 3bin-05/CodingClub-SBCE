@@ -37,9 +37,11 @@ export default function AboutView({ settings, members }: AboutViewProps) {
           <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight font-mono border-l-4 border-orange-500 pl-4">
             About Our Collective
           </h1>
-          <p className="text-neutral-400 text-sm md:text-base leading-relaxed">
-            {settings.aboutHistory || "Established in 2021 by the Department of Computer Science & Engineering, the SBCE Coding Club has grown into the campus hub for technological leadership."}
-          </p>
+          {settings.aboutHistory && (
+            <p className="text-neutral-400 text-sm md:text-base leading-relaxed">
+              {settings.aboutHistory}
+            </p>
+          )}
         </div>
 
         {/* Mission & Vision Cards */}
@@ -50,9 +52,13 @@ export default function AboutView({ settings, members }: AboutViewProps) {
               <Target className="w-5 h-5" />
               <span>OUR MISSION</span>
             </div>
-            <p className="text-neutral-300 text-xs md:text-sm leading-relaxed">
-              {settings.aboutMission || "To nurture a robust and inclusive developer ecosystem on campus where students learn modern engineering practices by doing."}
-            </p>
+            {settings.aboutMission ? (
+              <p className="text-neutral-300 text-xs md:text-sm leading-relaxed">
+                {settings.aboutMission}
+              </p>
+            ) : (
+              <p className="text-neutral-600 text-xs italic">No mission statement set. Configure via Admin panel.</p>
+            )}
           </div>
 
           {/* Vision Card */}
@@ -61,9 +67,13 @@ export default function AboutView({ settings, members }: AboutViewProps) {
               <Trophy className="w-5 h-5" />
               <span>OUR VISION</span>
             </div>
-            <p className="text-neutral-300 text-xs md:text-sm leading-relaxed">
-              {settings.aboutVision || "To produce top-tier technical talent capable of engineering solutions for national and global challenges, setting a benchmark for student-run technical communities in Kerala."}
-            </p>
+            {settings.aboutVision ? (
+              <p className="text-neutral-300 text-xs md:text-sm leading-relaxed">
+                {settings.aboutVision}
+              </p>
+            ) : (
+              <p className="text-neutral-600 text-xs italic">No vision statement set. Configure via Admin panel.</p>
+            )}
           </div>
         </div>
 
@@ -78,18 +88,16 @@ export default function AboutView({ settings, members }: AboutViewProps) {
             <ul className="space-y-2.5">
               {(settings.aboutObjectives && settings.aboutObjectives.length > 0
                 ? settings.aboutObjectives
-                : [
-                    "Conduct weekly code-along labs and specialized bootcamps on industry-relevant frameworks.",
-                    "Foster active open-source contributions on GitHub and participation in global hackathons.",
-                    "Deliver rigorous peer mentorship for technical interviews, DSA, and competitive coding.",
-                    "Design and deploy open-source utility systems to solve immediate needs of the college community."
-                  ]
+                : []
               ).map((obj, i) => (
                 <li key={i} className="flex items-start gap-2.5 text-neutral-400 text-xs leading-relaxed">
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0 mt-1.5" />
                   <span>{obj}</span>
                 </li>
               ))}
+              {(!settings.aboutObjectives || settings.aboutObjectives.length === 0) && (
+                <p className="text-neutral-600 text-xs italic">No objectives set. Configure via Admin panel.</p>
+              )}
             </ul>
           </div>
 
@@ -102,16 +110,16 @@ export default function AboutView({ settings, members }: AboutViewProps) {
             <div className="space-y-3">
               {(settings.aboutCoordinators && settings.aboutCoordinators.length > 0
                 ? settings.aboutCoordinators
-                : [
-                    { name: "Dr. Saji V.R.", title: "HOD, CSE Dept" },
-                    { name: "Prof. Soumya Murali", title: "Assistant Professor, CSE Dept" }
-                  ]
+                : []
               ).map((coord, i) => (
                 <div key={i} className="p-3 bg-black/40 border border-neutral-850 rounded-xl space-y-0.5">
                   <h4 className="text-xs font-bold text-white font-mono">{coord.name}</h4>
                   <p className="text-[11px] text-neutral-400 font-mono">{coord.title}</p>
                 </div>
               ))}
+              {(!settings.aboutCoordinators || settings.aboutCoordinators.length === 0) && (
+                <p className="text-neutral-600 text-xs italic">No faculty mentors set. Configure via Admin panel.</p>
+              )}
             </div>
           </div>
         </div>
