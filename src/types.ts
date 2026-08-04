@@ -35,28 +35,28 @@ export interface GalleryItem {
 }
 
 export interface Settings {
-  heroText: string;
-  heroSubtext: string;
-  heroTagline: string;
-  aboutHistory: string;
-  aboutMission: string;
-  aboutVision: string;
-  aboutObjectives: string[];
-  aboutCoordinators: Array<{ name: string; title: string }>;
-  statistics: {
-    members: number;
-    events: number;
-    hackathons: number;
-    projects: number;
-    yearsActive: number;
+  heroText?: string;
+  heroSubtext?: string;
+  heroTagline?: string;
+  aboutHistory?: string;
+  aboutMission?: string;
+  aboutVision?: string;
+  aboutObjectives?: string[];
+  aboutCoordinators?: Array<{ name: string; title: string }>;
+  statistics?: {
+    members?: number;
+    events?: number;
+    hackathons?: number;
+    projects?: number;
+    yearsActive?: number;
   };
-  socialLinks: {
-    email: string;
-    instagram: string;
-    linkedin: string;
-    github: string;
-    location: string;
-    mapEmbedUrl: string;
+  socialLinks?: {
+    email?: string;
+    instagram?: string;
+    linkedin?: string;
+    github?: string;
+    location?: string;
+    mapEmbedUrl?: string;
   };
-  footerText: string;
+  footerText?: string;
 }
