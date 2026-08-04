@@ -141,17 +141,18 @@ function MainApp() {
     };
   }, []);
 
-  // Map route path to App tabs
+  // Map route path to App tabs (handling optional trailing slashes and aliases)
+  const normalizedPath = path.replace(/\/$/, '') || '/';
   let currentTab = 'home';
-  if (path === '/events') {
+  if (normalizedPath === '/events' || normalizedPath === '/event') {
     currentTab = 'events';
-  } else if (path === '/about' || path === '/execom') {
+  } else if (normalizedPath === '/about' || normalizedPath === '/execom' || normalizedPath === '/members' || normalizedPath === '/team') {
     currentTab = 'about';
-  } else if (path === '/gallery') {
+  } else if (normalizedPath === '/gallery' || normalizedPath === '/photos') {
     currentTab = 'gallery';
-  } else if (path === '/contact') {
+  } else if (normalizedPath === '/contact' || normalizedPath === '/reach-us') {
     currentTab = 'contact';
-  } else if (path.startsWith('/admin')) {
+  } else if (normalizedPath.startsWith('/admin')) {
     currentTab = 'admin';
   }
 
@@ -175,21 +176,21 @@ function MainApp() {
   useEffect(() => {
     if (authLoading) return;
 
-    if (path.startsWith('/admin')) {
+    if (normalizedPath.startsWith('/admin')) {
       if (!user) {
         // Not logged in -> force login page
-        if (path !== '/admin/login') {
+        if (normalizedPath !== '/admin/login') {
           navigate('/admin/login');
         }
       } else {
         if (!isAuthorizedAdmin) {
           // Logged in but not approved -> force access-pending page
-          if (path !== '/admin/access-pending') {
+          if (normalizedPath !== '/admin/access-pending') {
             navigate('/admin/access-pending');
           }
         } else {
           // Logged in & approved -> prevent login/pending views, force dashboard
-          if (path === '/admin/login' || path === '/admin/access-pending' || path === '/admin') {
+          if (normalizedPath === '/admin/login' || normalizedPath === '/admin/access-pending' || normalizedPath === '/admin') {
             navigate('/admin/dashboard');
           }
         }
